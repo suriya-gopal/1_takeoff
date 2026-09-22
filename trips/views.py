@@ -45,3 +45,24 @@ def trip_list_view(request):
     return render(request, 'trips/trip_list.html', {'trips': trips})
 
 
+class TripDetailView(View):
+    """CBV 3 — base View, get() implemented manually."""
+
+    def get(self, request, pk):
+        trip = get_object_or_404(Trip, pk=pk)
+        stops = trip.stops.all()
+        join_requests = trip.join_requests.all()
+        return render(
+            request,
+            'trips/trip_detail.html',
+            {'trip': trip, 'stops': stops, 'join_requests': join_requests},
+        )
+
+
+class TripListView(ListView):
+    """CBV 4 — generic ListView, reuses trip_list.html (shared with FBV 2)."""
+    model = Trip
+    template_name = 'trips/trip_list.html'
+    context_object_name = 'trips'
+    queryset = Trip.objects.filter(visibility=Trip.PUBLIC)
+

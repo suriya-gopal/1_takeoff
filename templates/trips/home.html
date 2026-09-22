@@ -1,0 +1,31 @@
+{% extends "trips/base.html" %}
+{% block title %}TakeOff{% endblock %}
+{% block content %}
+  <h2 class="section-title">Plan your next trip</h2>
+  <p class="meta">Build an itinerary, browse trips other travelers have posted, and find companions
+     before you book.</p>
+
+  <!-- Section 2 View 4 (generic ListView), filtered to public trips —
+       this is the real "Community-posted trips" section from the Home/Landing wireframe (Screen 3). -->
+  <h3 class="section-title">Community-posted trips</h3>
+  <div class="trip-grid">
+    {% for trip in trips %}
+      <a class="trip-card" href="{% url 'trips:trip-detail' trip.pk %}">
+        <span class="badge community">Community</span>
+        <span class="seats">{{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left</span>
+        <p class="title">{{ trip.title }}</p>
+        <p class="route">
+          {% for stop in trip.stops.all %}{{ stop.destination.name }}{% if not forloop.last %} &rarr; {% endif %}{% empty %}Route not set yet{% endfor %}
+        </p>
+        <p class="meta">{{ trip.start_date }} &ndash; {{ trip.end_date }}</p>
+      </a>
+    {% empty %}
+      <p class="empty-note">No public trips posted yet &mdash; be the first!</p>
+    {% endfor %}
+  </div>
+
+  <p class="meta" style="margin-top:1rem;">
+    <a href="{% url 'trips:trip-list-generic' %}">See all community trips &rarr;</a> &middot;
+    <a href="{% url 'trips:trip-list' %}">See every trip &rarr;</a>
+  </p>
+{% endblock %}

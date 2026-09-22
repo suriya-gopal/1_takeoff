@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}TakeOff{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="{% static 'trips/img/logo.png' %}">
+  <style>
+    :root {
+      --color-bg: #fafafa; --color-surface: #fff; --color-text: #1a1a1a;
+      --color-primary: #2b6cb0; --color-border: #e2e2e2; --color-muted: #666;
+      --color-community: #f0e6d2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+           background: var(--color-bg); color: var(--color-text); }
+    header.site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+           padding: .75rem 1rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    header.site-header .logo { font-weight: 700; color: var(--color-primary); font-size: 1.1rem; display: flex; align-items: center; gap: .5rem; }
+    header.site-header .logo img { height: 28px; width: 28px; object-fit: contain; }
+    header.site-header .search { flex: 1 1 160px; padding: .4rem .6rem; border: 1px solid var(--color-border);
+           border-radius: 6px; color: var(--color-muted); font-size: .85rem; background: var(--color-bg); }
+    nav.subnav { display: flex; flex-wrap: wrap; gap: .5rem; padding: .6rem 1rem; background: var(--color-surface);
+           border-bottom: 1px solid var(--color-border); }
+    nav.subnav a { color: var(--color-primary); text-decoration: none; font-size: .85rem; }
+    main { padding: 1rem; max-width: 900px; margin: 0 auto; }
+    footer { padding: 1rem; text-align: center; font-size: .8rem; color: var(--color-muted); }
+
+    h2.section-title { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+    .trip-grid { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+    .trip-card { display: block; padding: .9rem 1rem; background: var(--color-surface);
+           border: 1px solid var(--color-border); border-radius: 8px; text-decoration: none;
+           color: var(--color-text); }
+    .trip-card .badge { display: inline-block; font-size: .65rem; letter-spacing: .04em;
+           text-transform: uppercase; color: var(--color-muted); border: 1px solid var(--color-border);
+           border-radius: 4px; padding: .1rem .4rem; margin-bottom: .35rem; }
+    .trip-card .badge.community { background: var(--color-community); border-color: #d8c79a; }
+    .trip-card .title { font-weight: 600; margin: 0 0 .2rem; }
+    .trip-card .route { font-size: .85rem; color: var(--color-muted); margin: 0 0 .2rem; }
+    .trip-card .meta { font-size: .8rem; color: var(--color-muted); }
+    .trip-card .seats { float: right; font-size: .8rem; color: var(--color-primary); font-weight: 600; }
+    .empty-note { color: var(--color-muted); font-size: .9rem; padding: .75rem 0; }
+
+    @media (min-width: 640px) {
+      main { padding: 1.5rem; }
+      .trip-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="{% url 'trips:home' %}"><img src="{% static 'trips/img/logo.png' %}" alt="TakeOff logo">TakeOff</a>
+    <input class="search" type="text" placeholder="Destination, dates, budget..." disabled>
+  </header>
+  <nav class="subnav">
+    <a href="{% url 'trips:home' %}">Home</a>
+    <a href="{% url 'trips:trip-list-generic' %}">Community</a>
+    <a href="{% url 'trips:trip-list' %}">All trips</a>
+    <a href="{% url 'trips:trip-manual' %}">Quick feed</a>
+  </nav>
+  <main>
+    {% block content %}<p>Default content.</p>{% endblock %}
+  </main>
+  <footer><p>TakeOff</p></footer>
+</body>
+</html>

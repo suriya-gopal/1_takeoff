@@ -1,0 +1,22 @@
+{% extends "trips/base.html" %}
+{% block title %}Trips{% endblock %}
+{% block content %}
+  <h2 class="section-title">Trips</h2>
+  <div class="trip-grid">
+    {% for trip in trips %}
+      <a class="trip-card" href="{% url 'trips:trip-detail' trip.pk %}">
+        <span class="badge {% if trip.visibility == 'public' %}community{% endif %}">
+          {% if trip.visibility == 'public' %}Community{% else %}Private{% endif %}
+        </span>
+        <span class="seats">{{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left</span>
+        <p class="title">{{ trip.title }}</p>
+        <p class="route">
+          {% for stop in trip.stops.all %}{{ stop.destination.name }}{% if not forloop.last %} &rarr; {% endif %}{% empty %}Route not set yet{% endfor %}
+        </p>
+        <p class="meta">{{ trip.start_date }} &ndash; {{ trip.end_date }} &middot; {{ trip.owner.display_name }}{% if trip.owner.is_domain_verified %} &#10003;{% endif %}</p>
+      </a>
+    {% empty %}
+      <p class="empty-note">No trips yet &mdash; be the first to plan one!</p>
+    {% endfor %}
+  </div>
+{% endblock %}

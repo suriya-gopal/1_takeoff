@@ -1,0 +1,54 @@
+Views built (trips/views.py):
+- trip_manual_view  -> FBV, HttpResponse (manual loader.get_template) -> /trips/manual/
+- trip_list_view    -> FBV, render() shortcut                        -> /trips/
+- TripDetailView    -> CBV, base django.views.View, get() implemented -> /trips/<pk>/
+- TripListView      -> CBV, generic ListView, filtered to public trips -> /trips/generic/
+
+All four built against Trip since it's the model everything else (stops, items,
+join requests) hangs off - one model, four ways of rendering it.
+
+Reflection (bonus):
+- HttpResponse (manual) forces you to think about what render() normally hides -
+  loading the template object yourself makes it obvious that render() is just
+  "get_template + .render() + wrap in HttpResponse" in one call.
+- Base View vs generic ListView: base View was worth it for TripDetailView, which
+  needed two related querysets (stops AND join_requests) in one context - ListView's
+  single queryset model doesn't fit that naturally. ListView earned its keep on the
+  plain "list of public trips" page, where there's nothing beyond the one queryset.
+
+Settings split done per class demo pattern (takeoff/settings/{base,development,production}.py
++ secrets_environment.py using django-environ). SECRET_KEY moved out of source into .env.
+
+Mobile-first base.html chosen deliberately - team decided this same responsive
+Django build gets wrapped with Capacitor later for the native app, so there's one
+frontend to build, not two.
+
+Blockers / open questions: none yet.
+
+--- Update: homepage nav added ---
+home() (the root "/" route, not one of the four graded views) now renders
+templates/trips/home.html instead of plain text, with buttons to all four
+graded views. View 3 (TripDetailView) has no standalone home-page button since
+it needs a specific trip pk — it's reached by clicking a trip title from the
+render() list or the generic ListView page.
+
+trip_list.html (View 2, render()) and the generic ListView (View 4) intentionally
+share the same template — the assignment explicitly encourages this as
+"separation of concerns." trip_list_manual.html (View 1) is deliberately plain
+with no links: the point of that view is showing the lowest-level
+loader.get_template() + HttpResponse mechanics, not the navigation.
+
+--- Update: templates re-grounded in the A1 wireframes ---
+Pulled the actual low-fidelity wireframe deck (docs/wireframes/TakeOff_Wireframes-2.pdf)
+back in and matched the four graded views to real screens instead of a generic demo layout:
+- home() -> Screen 3 "Home / Landing": header + search bar shape, "Community-posted trips"
+  card preview (real public Trip data, capped at 6).
+- TripListView (generic CBV) + trip_list_view (render() FBV) -> Screen 12 "Community Hub":
+  trip cards show route (via TripStop order), dates, owner + verified check, seats-left badge.
+- TripDetailView (base CBV) -> Screen 5 "Review Your Route" for the stop list, plus a
+  join-requests panel in the same spirit as Screen 12's Request-to-Join list (read-only for
+  now — accept/decline is real functionality that isn't built until forms/POST handling,
+  not in scope for A2).
+- trip_manual_view stays the plain "quick feed" card row (View 1, manual HttpResponse) —
+  deliberately no links, since its purpose is showing the get_template()+HttpResponse
+  mechanics, not navigation.

@@ -1,0 +1,16 @@
+{% extends "trips/base.html" %}
+{% block title %}Quick Trip Feed{% endblock %}
+{% block content %}
+  <h2 class="section-title">Community-posted trips</h2>
+  <div class="trip-grid">
+    {% for trip in trips %}
+      <div class="trip-card">
+        <span class="badge community">Community</span>
+        <p class="title">{{ trip.title }}</p>
+        <p class="meta">{{ trip.start_date }} &ndash; {{ trip.end_date }}</p>
+      </div>
+    {% empty %}
+      <p class="empty-note">No public trips posted yet.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

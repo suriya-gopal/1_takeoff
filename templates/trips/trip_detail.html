@@ -1,0 +1,31 @@
+{% extends "trips/base.html" %}
+{% block title %}{{ trip.title }}{% endblock %}
+{% block content %}
+  <h2 class="section-title">{{ trip.title }}</h2>
+  <p class="meta">{{ trip.start_date }} to {{ trip.end_date }} &middot; {{ trip.get_status_display }}
+     &middot; {{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left</p>
+
+  <h3 class="section-title">Route</h3>
+  <div class="trip-grid">
+    {% for stop in stops %}
+      <div class="trip-card">
+        <p class="title">{{ forloop.counter }}. {{ stop.destination.name }}</p>
+        <p class="meta">{{ stop.nights }} night{{ stop.nights|pluralize }}{% if stop.notes %} &middot; {{ stop.notes }}{% endif %}</p>
+      </div>
+    {% empty %}
+      <p class="empty-note">No stops added to this trip yet.</p>
+    {% endfor %}
+  </div>
+
+  <h3 class="section-title">Join requests</h3>
+  <div class="trip-grid">
+    {% for jr in join_requests %}
+      <div class="trip-card">
+        <p class="title">{{ jr.requester.display_name }}</p>
+        <p class="meta">{{ jr.status }} &middot; requested {{ jr.requested_at|date:"M j" }}</p>
+      </div>
+    {% empty %}
+      <p class="empty-note">No join requests yet.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

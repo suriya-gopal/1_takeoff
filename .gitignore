@@ -1,5 +1,4 @@
 .env
-.env.*
 __pycache__/
 *.py[cod]
 *.pyc
@@ -13,3 +12,4 @@ Thumbs.db
 staticfiles/
 media/
 *.bak
+takeoff/ui-ux/staticfiles/

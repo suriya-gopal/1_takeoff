@@ -112,7 +112,7 @@ class UrlAndNavigationTests(A3BaseTestCase):
     def test_home_page_and_nav_use_named_urls(self):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
-        for name in ("trips:trip-search",):
+        for name in ("trips:trip-search", "trips:insights"):
             self.assertContains(resp, reverse(name))
 
     def test_get_absolute_url_matches_detail_route(self):
@@ -157,3 +157,19 @@ class SearchTests(A3BaseTestCase):
         self.assertEqual(ctx["public_trips"], 2)
         rome = [d for d in ctx["trips_per_destination"] if d.name == "Rome"][0]
         self.assertEqual(rome.n_trips, 1)
+
+
+class ChartTests(A3BaseTestCase):
+    def test_chart_endpoint_returns_png(self):
+        resp = self.client.get(reverse("trips:chart-trips-by-destination"))
+        self.assertEqual(resp["Content-Type"], "image/png")
+        self.assertTrue(resp.content.startswith(b"\x89PNG"))
+
+    def test_chart_with_no_data_still_renders(self):
+        Trip.objects.all().delete()
+        self.assertEqual(self.client.get(reverse("trips:chart-trips-by-destination")).status_code, 200)
+
+    def test_insights_page_has_alt_text_and_caption(self):
+        resp = self.client.get(reverse("trips:insights"))
+        self.assertContains(resp, "alt=")
+        self.assertContains(resp, "<figcaption>")

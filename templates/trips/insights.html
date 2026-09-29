@@ -1,0 +1,25 @@
+{% extends "trips/base.html" %}
+{% block title %}Insights{% endblock %}
+{% block content %}
+  <h2 class="section-title">Where is everyone going?</h2>
+  <p class="meta">Popular destinations, counted from the trips in the database.</p>
+
+  <figure class="chart">
+    {# The image is drawn by a Django view at this URL (see trips_by_destination_chart in views.py). #}
+    <img src="{% url 'trips:chart-trips-by-destination' %}" width="700" height="360"
+         alt="Stacked bar chart of the number of public and private trips for each destination">
+    <figcaption>Figure 1. Trips per destination, split into public (community) and private trips.</figcaption>
+  </figure>
+
+  <h3 class="section-title">The numbers behind the chart</h3>
+  <table class="data">
+    <thead><tr><th>Destination</th><th class="num">Public</th><th class="num">Total</th></tr></thead>
+    <tbody>
+      {% for d in rows %}
+        <tr><td>{{ d.name }}, {{ d.country }}</td><td class="num">{{ d.n_public }}</td><td class="num">{{ d.n_trips }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="muted"><em>No trips yet.</em></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

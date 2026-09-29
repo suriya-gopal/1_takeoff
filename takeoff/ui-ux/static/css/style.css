@@ -1,0 +1,164 @@
+/* ==========================================================================
+   TakeOff — site-wide stylesheet
+   Loaded AFTER normalize.css (which levels out browser defaults).
+   Colours are taken from the TakeOff logo: navy, sky blue and sun yellow.
+   ========================================================================== */
+
+:root {
+  --navy: #0b2f6b;
+  --navy-dark: #071f49;
+  --sky: #18a0f0;
+  --sun: #ffb62d;
+  --bg: #f4f8fd;
+  --surface: #ffffff;
+  --text: #16233b;
+  --muted: #5b6b85;
+  --border: #dbe4f0;
+  --community: #fff3d6;
+  --danger: #b3261e;
+  --radius: 12px;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Avenir Next", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.55;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-heading); color: var(--navy); letter-spacing: .2px; }
+a { color: var(--sky); }
+a:hover { color: var(--navy); }
+
+/* ---- Header / brand bar ------------------------------------------------ */
+header.site-header {
+  background: linear-gradient(180deg, var(--navy), var(--navy-dark));
+  border-bottom: 4px solid var(--sun);
+  padding: .7rem 1rem;
+}
+.site-header .bar { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.brand { display: flex; align-items: center; gap: .6rem; color: #fff; text-decoration: none; font-family: var(--font-heading); font-weight: 700; font-size: 1.3rem; }
+.brand:hover { color: #fff; }
+.brand img { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 50%; padding: 2px; }
+.brand small { display: block; font-weight: 400; font-size: .72rem; opacity: .8; }
+.header-search { flex: 1 1 220px; display: flex; gap: .4rem; }
+.header-search input[type="search"] { flex: 1; }
+
+/* ---- Navigation ---------------------------------------------------------- */
+nav.subnav { background: var(--surface); border-bottom: 1px solid var(--border); }
+nav.subnav .bar { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: .25rem; padding: .35rem 1rem; }
+nav.subnav a { color: var(--navy); text-decoration: none; padding: .35rem .8rem; border-radius: 999px; font-size: .9rem; font-weight: 500; }
+nav.subnav a:hover { background: var(--bg); }
+nav.subnav a.cta { margin-left: auto; background: var(--sun); color: var(--navy-dark); font-weight: 700; }
+nav.subnav a.cta:hover { background: #ffc857; }
+
+main { max-width: 980px; margin: 0 auto; padding: 1rem; }
+footer.site-footer { background: var(--navy-dark); color: #c9d6ee; text-align: center; font-size: .8rem; padding: 1.2rem 1rem; margin-top: 2rem; }
+footer.site-footer a { color: #fff; }
+footer.site-footer p { margin: .2rem 0; }
+
+/* ---- Headings & text ------------------------------------------------------- */
+h2.section-title { font-size: 1.35rem; margin: 1.4rem 0 .5rem; }
+h3.section-title { font-size: 1.05rem; margin: 1.4rem 0 .5rem; }
+.meta, .muted { color: var(--muted); font-size: .88rem; }
+.empty-note { color: var(--muted); font-size: .92rem; padding: .75rem 0; }
+
+/* ---- Trip cards ------------------------------------------------------------ */
+.trip-grid { display: grid; grid-template-columns: 1fr; gap: .8rem; }
+.trip-card {
+  display: block; padding: .95rem 1.05rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  text-decoration: none; color: var(--text);
+  box-shadow: 0 2px 10px rgba(11, 47, 107, .05);
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+a.trip-card:hover { box-shadow: 0 6px 18px rgba(11, 47, 107, .12); transform: translateY(-1px); color: var(--text); }
+.trip-card .badge, .badge {
+  display: inline-block; font-size: .65rem; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: .1rem .45rem; margin-bottom: .35rem;
+}
+.badge.community { background: var(--community); border-color: #f0d48a; color: #7a5200; }
+.trip-card .title { font-weight: 700; margin: 0 0 .2rem; color: var(--navy); }
+.trip-card .route { font-size: .88rem; color: var(--muted); margin: 0 0 .2rem; }
+.trip-card .meta { font-size: .82rem; color: var(--muted); }
+.trip-card .seats { float: right; font-size: .82rem; color: var(--sky); font-weight: 700; }
+
+/* ---- Tabs (Community Hub: Planned / Completed) ---------------------------- */
+.tabs { display: flex; gap: .5rem; margin: .5rem 0 1rem; }
+.tabs a { padding: .45rem 1rem; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; color: var(--navy); background: var(--surface); font-weight: 600; font-size: .9rem; }
+.tabs a.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ---- Forms & buttons ------------------------------------------------------- */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; margin: .8rem 0; }
+.panel h3 { margin-top: 0; }
+label { display: block; font-weight: 600; font-size: .88rem; margin: .6rem 0 .2rem; color: var(--navy); }
+input[type="text"], input[type="search"], input[type="number"], input[type="date"], select, textarea {
+  width: 100%; padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; background: #fff; color: var(--text);
+}
+/* normalize.css makes type="search" inputs content-box, which makes them wider than their
+   column. Force border-box on every field and give single-line fields one common height. */
+input[type="search"], input[type="text"], input[type="number"], input[type="date"], select, textarea { box-sizing: border-box; }
+input[type="search"], input[type="text"], input[type="number"], input[type="date"], select { height: 2.75rem; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--sky); outline-offset: 1px; }
+.form-row { display: grid; grid-template-columns: 1fr; gap: 0 .8rem; }
+.helptext, .help { color: var(--muted); font-size: .8rem; }
+.errorlist { list-style: none; margin: .2rem 0; padding: 0; color: var(--danger); font-size: .85rem; }
+button, .button, input[type="submit"] {
+  display: inline-block; background: var(--navy); color: #fff; border: 0; border-radius: 999px;
+  padding: .6rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+button:hover, .button:hover, input[type="submit"]:hover { background: var(--sky); color: #fff; }
+.button.secondary { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+.button.secondary:hover { background: var(--navy); color: #fff; }
+/* Grid (not flex) so neighbouring fields can never overlap; min-width:0 lets inputs shrink. */
+.inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; align-items: end; }
+.inline-form > div { min-width: 0; }
+.inline-form label { margin-top: 0; }
+.panel form .tabs { margin: .9rem 0; }
+.header-search button { background: var(--sun); color: var(--navy-dark); padding: .5rem 1rem; }
+.header-search button:hover { background: #ffc857; color: var(--navy-dark); }
+.checkbox-row label { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.checkbox-row input { width: auto; }
+
+/* ---- Tables & stat chips (aggregations) ------------------------------------- */
+table.data { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; font-size: .92rem; }
+table.data th, table.data td { padding: .55rem .8rem; border-bottom: 1px solid var(--border); text-align: left; }
+table.data th { background: #eaf2fc; color: var(--navy); }
+table.data td.num, table.data th.num { text-align: right; }
+.stats { display: flex; flex-wrap: wrap; gap: .6rem; }
+.stat-chip { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--sun); border-radius: 10px; padding: .5rem .9rem; }
+.stat-chip strong { display: block; font-size: 1.5rem; color: var(--navy); line-height: 1.1; }
+.stat-chip span { font-size: .8rem; color: var(--muted); }
+.result-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.result-list li { padding: .6rem .9rem; border-bottom: 1px solid var(--border); }
+.result-list li:last-child { border-bottom: 0; }
+figure.chart { margin: 1rem 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+figure.chart img { max-width: 100%; height: auto; }
+figcaption { color: var(--muted); font-size: .85rem; margin-top: .5rem; }
+code, pre { background: #eef3fa; border-radius: 6px; padding: .1rem .35rem; font-size: .85rem; }
+
+/* ---- Wider screens ------------------------------------------------------------ */
+@media (min-width: 640px) {
+  main { padding: 1.5rem; }
+  .trip-grid { grid-template-columns: 1fr 1fr; }
+  .form-row { grid-template-columns: 1fr 1fr; }
+}
+/* ---- Footer columns ------------------------------------------------------ */
+footer.site-footer { text-align: left; padding: 2rem 1rem 1rem; }
+.footer-grid { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+.footer-grid h4 { color: #fff; margin: 0 0 .5rem; font-size: .95rem; }
+.footer-grid p { margin: 0; color: #c9d6ee; }
+.footer-grid ul { list-style: none; margin: 0; padding: 0; }
+.footer-grid li { margin: .25rem 0; color: #c9d6ee; }
+.footer-grid a { color: #c9d6ee; text-decoration: none; }
+.footer-grid a:hover { color: var(--sun); }
+.footer-note { max-width: 980px; margin: 1.5rem auto 0; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.15); text-align: center; }
+@media (min-width: 640px) {
+  .footer-grid { grid-template-columns: 2fr 1fr 1fr 1.4fr; }
+}

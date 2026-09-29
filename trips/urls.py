@@ -17,4 +17,8 @@ urlpatterns = [
 
     # Search
     path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
+
+    # Chart page and PNG image
+    path("insights/", views.insights, name="insights"),
+    path("charts/trips-by-destination.png", views.trips_by_destination_chart, name="chart-trips-by-destination"),
 ]

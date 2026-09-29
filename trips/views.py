@@ -71,13 +71,19 @@ class TripListView(ListView):
 
 
 # ===========================================================================
-# Search
+# Search, chart
 # ===========================================================================
 
 from decimal import Decimal, InvalidOperation
+from io import BytesIO
 
 from django.db.models import Count, Q
 from django.utils.dateparse import parse_date
+
+import matplotlib
+matplotlib.use("Agg")            # draw to memory only — no GUI window on a server
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 
 # ---------------------------------------------------------------------------
@@ -217,3 +223,56 @@ class TripSearchView(ListView):
             JoinRequest.objects.values("status").annotate(n=Count("request_id")).order_by("status")
         )
         return ctx
+
+
+# ---------------------------------------------------------------------------
+# Chart image
+# ---------------------------------------------------------------------------
+def trips_by_destination_chart(request):
+    """
+    PNG image endpoint: /charts/trips-by-destination.png
+
+    Data comes from the ORM (destination_popularity), not hard-coded numbers.
+
+    Memory awareness: the picture is built and saved into a BytesIO — a file
+    that lives in RAM — so nothing is written to disk. Costs to know about:
+      * the Figure holds the pixels in memory while drawing (a few MB at this
+        size), so plt.close(fig) is called or every request would leak a figure;
+      * the finished PNG is only tens of KB, but it is held in RAM once in
+        `buf` and once more by getvalue(), then released after the response;
+      * pyplot keeps global state, which is fine for the dev server but is why
+        production apps often use matplotlib.figure.Figure directly.
+    """
+    rows = list(destination_popularity())
+    labels = [d.name for d in rows]
+    public = [d.n_public for d in rows]
+    private = [d.n_trips - d.n_public for d in rows]
+
+    fig, ax = plt.subplots(figsize=(7, 3.6), dpi=130)
+    if rows:
+        ax.bar(labels, public, color="#18a0f0", label="Public (community)")
+        ax.bar(labels, private, bottom=public, color="#ffb62d", label="Private")
+        ax.legend(frameon=False, fontsize=8)
+    else:
+        ax.text(0.5, 0.5, "No trips yet", ha="center", va="center", transform=ax.transAxes)
+
+    ax.set_title("Trips per destination", fontsize=11, color="#0b2f6b", loc="left")
+    ax.set_xlabel("Destination", fontsize=9)
+    ax.set_ylabel("Number of trips", fontsize=9)
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))     # no "1.5 trips"
+    ax.tick_params(axis="x", rotation=40, labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.tight_layout()
+
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    plt.close(fig)                       # free the figure's memory
+    buf.seek(0)
+    return HttpResponse(buf.getvalue(), content_type="image/png")
+
+
+def insights(request):
+    """Page that shows the chart with a heading, caption, alt text and the numbers behind it."""
+    return render(request, "trips/insights.html", {"rows": destination_popularity()})

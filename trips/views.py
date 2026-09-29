@@ -1,10 +1,11 @@
 """
-Views for the TakeOff trips app.
+Views for the TakeOff trips app: pages, forms, search, chart and JSON API.
 """
 
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
+from .forms import JoinRequestForm, TripForm
 from .models import Destination, JoinRequest, Trip
 
 
@@ -48,17 +49,38 @@ def trip_list_view(request):
 
 
 class TripDetailView(View):
-    """One trip's page, built on the base View class. Only get() is implemented."""
+    """
+    One trip's page, built on the base View class.
 
-    def get(self, request, pk):
-        trip = get_object_or_404(Trip, pk=pk)
-        stops = trip.stops.all()
-        join_requests = trip.join_requests.all()
+    get()  shows the trip, its route, its join requests and an empty "Request to join" form.
+    post() validates that form, saves a JoinRequest row, then redirects back to the trip.
+    """
+
+    def _render(self, request, trip, form, status=200):
         return render(
             request,
             'trips/trip_detail.html',
-            {'trip': trip, 'stops': stops, 'join_requests': join_requests},
+            {
+                'trip': trip,
+                'stops': trip.stops.all(),
+                'join_requests': trip.join_requests.all(),
+                'form': form,
+            },
+            status=status,
         )
+
+    def get(self, request, pk):
+        trip = get_object_or_404(Trip, pk=pk)
+        return self._render(request, trip, JoinRequestForm(trip=trip))
+
+    def post(self, request, pk):
+        trip = get_object_or_404(Trip, pk=pk)
+        form = JoinRequestForm(request.POST, trip=trip)
+        if form.is_valid():
+            form.save()
+            # Post/Redirect/Get: redirecting means a browser refresh cannot re-submit the form.
+            return redirect(trip.get_absolute_url())
+        return self._render(request, trip, form, status=400)
 
 
 class TripListView(ListView):
@@ -71,14 +93,17 @@ class TripListView(ListView):
 
 
 # ===========================================================================
-# Search, chart
+# Search, forms, chart and API
 # ===========================================================================
 
+import json
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
 
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.utils.dateparse import parse_date
+from django.views.generic import CreateView
 
 import matplotlib
 matplotlib.use("Agg")            # draw to memory only — no GUI window on a server
@@ -226,6 +251,20 @@ class TripSearchView(ListView):
 
 
 # ---------------------------------------------------------------------------
+# Plan a trip form
+# ---------------------------------------------------------------------------
+class TripCreateView(CreateView):
+    """
+    "Plan your trip" page. On a valid submission the trip and its stops are saved and
+    the user is redirected to the new trip. success_url is left out on purpose:
+    CreateView then uses the trip's get_absolute_url().
+    """
+    model = Trip
+    form_class = TripForm
+    template_name = "trips/trip_form.html"
+
+
+# ---------------------------------------------------------------------------
 # Chart image
 # ---------------------------------------------------------------------------
 def trips_by_destination_chart(request):
@@ -276,3 +315,128 @@ def trips_by_destination_chart(request):
 def insights(request):
     """Page that shows the chart with a heading, caption, alt text and the numbers behind it."""
     return render(request, "trips/insights.html", {"rows": destination_popularity()})
+
+
+# ---------------------------------------------------------------------------
+# JSON API (public, read-only, public trips only)
+# ---------------------------------------------------------------------------
+# --- HttpResponse vs JsonResponse: same data, different Content-Type labels ---
+# The MIME type is the Content-Type header that tells the client how to read the body.
+def api_ping_jsonresponse(request):
+    """JsonResponse: serialises the dict AND sets Content-Type: application/json."""
+    return JsonResponse({"ok": True})
+
+
+def api_ping_httpresponse_manual_json(request):
+    """HttpResponse doing JsonResponse's job by hand: json.dumps + set the header ourselves."""
+    return HttpResponse(json.dumps({"ok": True}), content_type="application/json")
+
+
+def api_ping_httpresponse_default(request):
+    """HttpResponse with no content_type: Django labels it text/html; charset=utf-8."""
+    return HttpResponse('{"ok": true}')
+
+
+def api_ping_httpresponse_text(request):
+    """HttpResponse labelled text/plain — a client will NOT treat this as JSON."""
+    return HttpResponse("ok", content_type="text/plain")
+
+
+def _trip_to_dict(trip):
+    """One place that decides which Trip fields are safe to publish."""
+    return {
+        "trip_id": trip.pk,
+        "title": trip.title,
+        "status": trip.status,
+        "start_date": trip.start_date.isoformat(),
+        "end_date": trip.end_date.isoformat(),
+        "nights": trip.duration_nights,
+        "route": [stop.destination.name for stop in trip.stops.all()],
+        "budget_min_usd": float(trip.budget_min_usd),
+        "budget_max_usd": float(trip.budget_max_usd),
+        "seats_open": trip.seats_open,
+        "owner": trip.owner.display_name,
+        "owner_verified": trip.owner.is_domain_verified,
+        "url": trip.get_absolute_url(),
+    }
+
+
+def api_trips(request):
+    """
+    FBV API:  GET /api/trips/
+      ?q=lisbon         title / destination / country contains
+      ?country=Italy    trip visits a city in this country
+      ?status=planned   planned | completed
+      ?max_budget=1500  trips whose minimum budget is <= this
+      ?min_seats=2      trips with at least this many open seats
+    """
+    params = request.GET
+    qs = (
+        Trip.objects.filter(visibility=Trip.PUBLIC)       # never publish private trips
+        .select_related("owner")
+        .prefetch_related("stops__destination")
+    )
+
+    q = params.get("q", "").strip()
+    if q:
+        qs = qs.filter(
+            Q(title__icontains=q)
+            | Q(stops__destination__name__icontains=q)
+            | Q(stops__destination__country__icontains=q)
+        )
+    country = params.get("country", "").strip()
+    if country:
+        qs = qs.filter(stops__destination__country__iexact=country)
+    status = params.get("status", "").strip()
+    if status:
+        qs = qs.filter(status=status)
+    try:
+        if params.get("max_budget"):
+            qs = qs.filter(budget_min_usd__lte=Decimal(params["max_budget"]))
+        if params.get("min_seats"):
+            qs = qs.filter(seats_open__gte=int(params["min_seats"]))
+    except (InvalidOperation, ValueError):
+        return JsonResponse({"error": "max_budget must be a number and min_seats a whole number."}, status=400)
+
+    data = [_trip_to_dict(t) for t in qs.distinct()]
+    return JsonResponse({"count": len(data), "results": data})
+
+
+class DestinationsAPI(View):
+    """
+    CBV API:  GET /api/destinations/?country=Italy&q=rom
+    Destinations with how many PUBLIC trips visit each one.
+    """
+
+    def get(self, request):
+        qs = Destination.objects.annotate(
+            public_trips=Count("stops__trip", filter=Q(stops__trip__visibility=Trip.PUBLIC), distinct=True)
+        )
+        country = request.GET.get("country", "").strip()
+        if country:
+            qs = qs.filter(country__iexact=country)
+        q = request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(name__icontains=q)
+
+        data = [
+            {
+                "name": d.name,
+                "country": d.country,
+                "iata_code": d.iata_code,
+                "avg_daily_cost_usd": float(d.avg_daily_cost_usd),
+                "public_trips": d.public_trips,
+            }
+            for d in qs.order_by("-public_trips", "name")
+        ]
+        return JsonResponse({"count": len(data), "results": data})
+
+
+def api_popular_destinations(request):
+    """GET /api/destinations/popular/ — labels and counts arrays, handy for charts."""
+    rows = destination_popularity()
+    return JsonResponse({
+        "labels": [d.name for d in rows],
+        "public_trips": [d.n_public for d in rows],
+    })
+

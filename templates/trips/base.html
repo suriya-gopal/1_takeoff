@@ -35,6 +35,7 @@
       <a href="{% url 'trips:trip-manual' %}">Quick feed</a>
       <a href="{% url 'trips:trip-search' %}">Search</a>
       <a href="{% url 'trips:insights' %}">Insights</a>
+      <a class="cta" href="{% url 'trips:trip-create' %}">+ Plan a trip</a>
     </div>
   </nav>
   <main>
@@ -62,6 +63,7 @@
       <div>
         <h4>Get started</h4>
         <ul>
+          <li><a href="{% url 'trips:trip-create' %}">Plan a trip</a></li>
           <li><a href="{% url 'trips:trip-list' %}">All trips</a></li>
         </ul>
       </div>

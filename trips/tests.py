@@ -78,6 +78,8 @@ class TripModelConstraintTests(TestCase):
 # Tests for navigation, search, chart, forms and the JSON API.
 # Run with:  python manage.py test trips
 # ===========================================================================
+import json
+
 from django.test import Client
 from django.urls import reverse
 
@@ -112,7 +114,7 @@ class UrlAndNavigationTests(A3BaseTestCase):
     def test_home_page_and_nav_use_named_urls(self):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
-        for name in ("trips:trip-search", "trips:insights"):
+        for name in ("trips:trip-search", "trips:insights", "trips:trip-create"):
             self.assertContains(resp, reverse(name))
 
     def test_get_absolute_url_matches_detail_route(self):
@@ -173,3 +175,86 @@ class ChartTests(A3BaseTestCase):
         resp = self.client.get(reverse("trips:insights"))
         self.assertContains(resp, "alt=")
         self.assertContains(resp, "<figcaption>")
+
+
+class FormTests(A3BaseTestCase):
+    def valid_trip_data(self, **over):
+        data = {"owner": self.bob.pk, "title": "Roman weekend", "start_date": "2026-11-01", "end_date": "2026-11-08",
+                "budget_min_usd": "800", "budget_max_usd": "1200", "group_size": "2", "seats_open": "2",
+                "stop_1": self.rome.pk, "stop_2": self.lisbon.pk, "looking_for_companions": "on"}
+        data.update(over)
+        return data
+
+    def test_create_trip_redirects_to_detail_and_builds_ordered_stops(self):
+        resp = self.client.post(reverse("trips:trip-create"), self.valid_trip_data())
+        trip = Trip.objects.get(title="Roman weekend")
+        self.assertRedirects(resp, trip.get_absolute_url())
+        self.assertEqual(trip.visibility, Trip.PUBLIC)
+        self.assertEqual([s.destination.name for s in trip.stops.all()], ["Rome", "Lisbon"])
+        self.assertEqual(sum(s.nights for s in trip.stops.all()), 7)
+
+    def test_unticked_companions_makes_private_draft(self):
+        data = self.valid_trip_data(); data.pop("looking_for_companions")
+        self.client.post(reverse("trips:trip-create"), data)
+        trip = Trip.objects.get(title="Roman weekend")
+        self.assertEqual((trip.visibility, trip.status, trip.seats_open), (Trip.PRIVATE, Trip.DRAFT, 0))
+
+    def test_bad_dates_show_form_error_not_500(self):
+        resp = self.client.post(reverse("trips:trip-create"), self.valid_trip_data(end_date="2026-10-01"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Trip.objects.filter(title="Roman weekend").exists())
+
+    def test_join_request_post_creates_row_then_redirects(self):
+        url = self.public.get_absolute_url()
+        resp = self.client.post(url, {"requester": self.bob.pk, "message": "Count me in"})
+        self.assertRedirects(resp, url)
+        self.assertEqual(JoinRequest.objects.get(trip=self.public, requester=self.bob).message, "Count me in")
+
+    def test_join_request_twice_updates_instead_of_duplicating(self):
+        url = self.public.get_absolute_url()
+        self.client.post(url, {"requester": self.bob.pk, "message": "one"})
+        self.client.post(url, {"requester": self.bob.pk, "message": "two"})
+        self.assertEqual(JoinRequest.objects.filter(trip=self.public).count(), 1)
+
+    def test_owner_cannot_join_own_trip_and_private_trip_is_closed(self):
+        resp = self.client.post(self.public.get_absolute_url(), {"requester": self.alice.pk, "message": ""})
+        self.assertEqual(resp.status_code, 400)
+        resp = self.client.post(self.private.get_absolute_url(), {"requester": self.bob.pk, "message": ""})
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(JoinRequest.objects.count(), 0)
+
+
+class ApiTests(A3BaseTestCase):
+    def test_api_trips_only_public_and_json_mime(self):
+        resp = self.client.get(reverse("trips:api-trips"))
+        self.assertEqual(resp["Content-Type"], "application/json")
+        titles = {t["title"] for t in resp.json()["results"]}
+        self.assertEqual(titles, {"Italy loop", "Kyoto memories"})
+
+    def test_api_filters(self):
+        get = lambda **p: self.client.get(reverse("trips:api-trips"), p).json()
+        self.assertEqual(get(country="italy")["count"], 1)
+        self.assertEqual(get(status="completed")["count"], 1)
+        self.assertEqual(get(max_budget="900")["count"], 1)      # Kyoto (budget 0) only
+        self.assertEqual(get(min_seats="2")["count"], 1)
+        self.assertEqual(get(q="zzz")["count"], 0)
+
+    def test_api_bad_param_is_400_json(self):
+        resp = self.client.get(reverse("trips:api-trips"), {"max_budget": "lots"})
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("error", resp.json())
+
+    def test_api_exposes_no_private_owner_data(self):
+        body = self.client.get(reverse("trips:api-trips")).content.decode()
+        self.assertNotIn("alice@illinois.edu", body)
+
+    def test_cbv_api_counts_public_trips(self):
+        data = self.client.get(reverse("trips:api-destinations"), {"country": "Portugal"}).json()
+        self.assertEqual(data["results"][0]["public_trips"], 0)   # its only trip is private
+
+    def test_mime_types_differ(self):
+        ct = lambda name: self.client.get(reverse(name))["Content-Type"]
+        self.assertEqual(ct("trips:api-ping-json"), "application/json")
+        self.assertEqual(ct("trips:api-ping-http-manual-json"), "application/json")
+        self.assertTrue(ct("trips:api-ping-http-default").startswith("text/html"))
+        self.assertEqual(ct("trips:api-ping-http-text"), "text/plain")

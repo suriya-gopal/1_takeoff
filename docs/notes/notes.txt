@@ -16,7 +16,7 @@ Reflection (bonus):
   single queryset model doesn't fit that naturally. ListView earned its keep on the
   plain "list of public trips" page, where there's nothing beyond the one queryset.
 
-Settings split done per class demo pattern (takeoff/settings/{base,development,production}.py
+Settings split into base/development/production (takeoff/settings/{base,development,production}.py
 + secrets_environment.py using django-environ). SECRET_KEY moved out of source into .env.
 
 Mobile-first base.html chosen deliberately - team decided this same responsive
@@ -26,29 +26,107 @@ frontend to build, not two.
 Blockers / open questions: none yet.
 
 --- Update: homepage nav added ---
-home() (the root "/" route, not one of the four graded views) now renders
+home() (the root "/" route, not one of the four main views) now renders
 templates/trips/home.html instead of plain text, with buttons to all four
-graded views. View 3 (TripDetailView) has no standalone home-page button since
+main views. View 3 (TripDetailView) has no standalone home-page button since
 it needs a specific trip pk — it's reached by clicking a trip title from the
 render() list or the generic ListView page.
 
 trip_list.html (View 2, render()) and the generic ListView (View 4) intentionally
-share the same template — the assignment explicitly encourages this as
-"separation of concerns." trip_list_manual.html (View 1) is deliberately plain
+share the same template — this is deliberate: separation of concerns. trip_list_manual.html (View 1) is deliberately plain
 with no links: the point of that view is showing the lowest-level
 loader.get_template() + HttpResponse mechanics, not the navigation.
 
---- Update: templates re-grounded in the A1 wireframes ---
+--- Update: templates re-grounded in the wireframes ---
 Pulled the actual low-fidelity wireframe deck (docs/wireframes/TakeOff_Wireframes-2.pdf)
-back in and matched the four graded views to real screens instead of a generic demo layout:
-- home() -> Screen 3 "Home / Landing": header + search bar shape, "Community-posted trips"
+back in and matched the four main views to real screens instead of a generic demo layout:
+- home() -> "Home / Landing": header + search bar shape, "Community-posted trips"
   card preview (real public Trip data, capped at 6).
-- TripListView (generic CBV) + trip_list_view (render() FBV) -> Screen 12 "Community Hub":
+- TripListView (generic CBV) + trip_list_view (render() FBV) -> "Community Hub":
   trip cards show route (via TripStop order), dates, owner + verified check, seats-left badge.
-- TripDetailView (base CBV) -> Screen 5 "Review Your Route" for the stop list, plus a
-  join-requests panel in the same spirit as Screen 12's Request-to-Join list (read-only for
-  now — accept/decline is real functionality that isn't built until forms/POST handling,
-  not in scope for A2).
+- TripDetailView (base CBV) -> "Review Your Route" for the stop list, plus a
+  join-requests panel in the same spirit as the Community Hub Request-to-Join list (read-only for
+  now — accept/decline is real functionality that is not built yet).
 - trip_manual_view stays the plain "quick feed" card row (View 1, manual HttpResponse) —
   deliberately no links, since its purpose is showing the get_template()+HttpResponse
   mechanics, not navigation.
+
+==========================================================================
+SEARCH, FORMS, CHART, STATIC FILES AND API
+==========================================================================
+All screens were checked against the wireframes (docs/wireframes/TakeOff_Wireframes-2.pdf):
+Home, Trip Input ("Plan your trip") and Community Hub.
+
+--- URL linking and get_absolute_url() ---------------------------------------
+Trip.get_absolute_url() returns reverse("trips:trip-detail", kwargs={"pk": self.pk}).
+It is useful for every feature that has to point at ONE trip:
+  * Home / All-trips / Community cards      -> {{ trip.get_absolute_url }}
+  * search results (filter and budget)      -> same call, so links never drift
+  * "Plan your trip" form                   -> after a valid submission, CreateView
+    redirects to the new trip automatically because success_url is not set
+  * "Request to join"                       -> redirect back to the trip page
+  * the JSON API                            -> every result carries its "url"
+If the route ever changes (e.g. /trips/<pk>/ -> /trips/<slug>/), only the model
+method changes; no template needs editing.
+Flow: models.py (get_absolute_url) -> urls.py (name "trip-detail") -> views.py
+(TripDetailView) -> templates/trips/trip_detail.html.
+
+--- Search: GET vs POST (design thinking) -------------------------------------
+GET  (filter by destination / country / date / Planned-Completed tab)
+  Same link -> same results, so it is bookmarkable and shareable. Only PUBLIC
+  trips are searched this way, because a link can be passed around.
+POST (budget + group size, from the Trip Input screen's budget range / group size)
+  Budget is personal, so it goes in the request body instead of the URL, browser
+  history and server access logs. Trade-off: no shareable result link, and a
+  browser refresh asks to re-submit. (POST hides data from the URL; it is not
+  encryption. Use HTTPS when deployed.)
+Relationship spanning used: Trip -> TripStop -> Destination
+  (stops__destination__name__icontains, stops__destination__country).
+Summaries: Trip.count(), public count, JoinRequest count (totals);
+  Destination.annotate(Count("stops__trip", distinct=True)) and
+  JoinRequest.values("status").annotate(Count(...)) (grouped).
+distinct=True / .distinct() are needed because joining across stops can repeat a trip.
+
+--- Static files ----------------------------------------------------------------
+Organisation choice: site-wide CSS lives in ONE project-level folder,
+takeoff/ui-ux/static/css/ (normalize.css + our own style.css), registered with
+STATICFILES_DIRS. The logo stays in the app (trips/static/trips/img/logo.png),
+because an image the app owns belongs with the app and is namespaced under trips/.
+Rule of thumb used: shared look-and-feel = project level, app-owned assets = app level.
+The earlier inline <style> block was moved into style.css; colours come from the logo.
+Cache busting, two layers:
+  1. Development: base.html appends ?v={% now "U" %} (a timestamp) to the CSS URLs,
+     so the browser re-downloads after every edit. Downside: it defeats caching
+     completely, so it is a development trick only.
+  2. Production: ManifestStaticFilesStorage (takeoff/settings/production.py).
+     `collectstatic` renames style.css -> style.<hash>.css; a changed file gets a
+     new URL. Verified: static('css/style.css') -> /static/css/style.39548259077b.css.
+     Django 5.1+ removed the old STATICFILES_STORAGE setting; the STORAGES dict is
+     its replacement. Before deploying, delete the ?v={{ ts }} part so production
+     caches properly.
+
+--- Chart -------------------------------------------------------------------------
+Chart data = destination_popularity() (database query). The PNG is drawn into a
+BytesIO (a file held in RAM), never written to disk. RAM implications: the Figure
+holds pixels while drawing, so plt.close(fig) is required or figures pile up per
+request; the finished PNG is tens of KB. Every page view draws the chart again -
+if traffic grew, cache it.
+
+--- API plan ------------------------------------------------------------------------
+How the API will grow: the read-only endpoints are the first step. Next steps are
+authentication (so owners can see their own private trips), then write endpoints
+(create trip, request to join, accept/decline) that reuse the same forms and validation,
+and finally the mobile wrapper (Capacitor, see the notes above) calling these same URLs.
+Data served now: PUBLIC trips only (title, dates, route, budget range, seats open,
+owner display name + verified flag, url), and destinations with public-trip counts.
+Never served: private trips, e-mail addresses, join-request messages.
+Data planned later: itinerary items / booking links for public trips, community
+completed-trip memories (photos, ratings), popular-destination feeds for recommendations.
+
+--- Footer --------------------------------------------------------------------------
+base.html footer is four columns: TakeOff blurb, Explore, Get started, Contact us.
+Links use {% url %}; the copyright year uses {% now "Y" %} so it never goes stale.
+The contact address (xyz@takeoff.com) is a placeholder to swap before launch.
+Layout is a CSS grid (.footer-grid) that collapses to one column on phones.
+The normalize.css credit line was removed from the footer; the MIT licence text is
+still in normalize.css's header comment, which satisfies its terms.

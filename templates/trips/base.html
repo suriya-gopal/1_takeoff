@@ -51,16 +51,24 @@
 <body>
   <header class="site-header">
     <a class="logo" href="{% url 'trips:home' %}"><img src="{% static 'trips/img/logo.png' %}" alt="TakeOff logo">TakeOff</a>
-    <input class="search" type="text" placeholder="Destination, dates, budget..." disabled>
+    <form action="{% url 'trips:trip-search' %}" method="get" role="search">
+      <input class="search" type="search" name="q" placeholder="Search: destination, dates, budget…" aria-label="Search community trips by destination">
+      <button type="submit">Search</button>
+    </form>
   </header>
   <nav class="subnav">
     <a href="{% url 'trips:home' %}">Home</a>
     <a href="{% url 'trips:trip-list-generic' %}">Community</a>
     <a href="{% url 'trips:trip-list' %}">All trips</a>
     <a href="{% url 'trips:trip-manual' %}">Quick feed</a>
+    <a href="{% url 'trips:trip-search' %}">Search</a>
   </nav>
   <main>
+    {# Optional blocks, in page order: search forms, their results, the main content, then summaries. #}
+    {% block send_search %}{% endblock %}
+    {% block filter %}{% endblock %}
     {% block content %}<p>Default content.</p>{% endblock %}
+    {% block stats %}{% endblock %}
   </main>
   <footer><p>TakeOff</p></footer>
 </body>

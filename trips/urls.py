@@ -9,9 +9,12 @@ app_name = "trips"
 urlpatterns = [
     path("", views.home, name="home"),
 
-    # Assignment 2, Section 2 — the four required views
+    # Trip pages
     path("trips/manual/", views.trip_manual_view, name="trip-manual"),
     path("trips/", views.trip_list_view, name="trip-list"),
     path("trips/<int:pk>/", views.TripDetailView.as_view(), name="trip-detail"),
     path("trips/generic/", views.TripListView.as_view(), name="trip-list-generic"),
+
+    # Search
+    path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
 ]

@@ -1,0 +1,127 @@
+{% extends "trips/base.html" %}
+{% block title %}Search trips{% endblock %}
+
+{# Search forms first. Their results are shown right below them (see the filter block). #}
+{% block send_search %}
+  <h2 class="section-title">Search trips</h2>
+
+  <div class="panel">
+    <h3>Search by destination or date</h3>
+    <form method="get" action="{% url 'trips:trip-search' %}">
+      <div class="inline-form">
+        <div><label for="q">Destination or trip name</label><input id="q" type="search" name="q" value="{{ q }}" placeholder="e.g. Lisbon, Japan"></div>
+        <div><label for="country">Country</label>
+          <select id="country" name="country">
+            <option value="">Any country</option>
+            {% for c in countries %}<option value="{{ c }}" {% if c == country %}selected{% endif %}>{{ c }}</option>{% endfor %}
+          </select></div>
+        <div><label for="starts_after">Starts on/after</label><input id="starts_after" type="date" name="starts_after" value="{{ starts_after }}"></div>
+      </div>
+      <div class="tabs">
+        <a class="{% if tab == '' %}active{% endif %}" href="?q={{ q|urlencode }}&amp;country={{ country|urlencode }}">All</a>
+        <a class="{% if tab == 'planned' %}active{% endif %}" href="?tab=planned&amp;q={{ q|urlencode }}&amp;country={{ country|urlencode }}">Planned trips</a>
+        <a class="{% if tab == 'completed' %}active{% endif %}" href="?tab=completed&amp;q={{ q|urlencode }}&amp;country={{ country|urlencode }}">Completed trips</a>
+      </div>
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <button type="submit">Search</button>
+      {% if searching %}<a class="button secondary" href="{% url 'trips:trip-search' %}">Clear</a>{% endif %}
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Find trips that fit my budget</h3>
+    <form method="post" action="{% url 'trips:trip-search' %}">
+      {% csrf_token %}
+      <div class="inline-form">
+        <div><label for="max_budget">Max budget per person (USD)</label><input id="max_budget" type="number" name="max_budget" min="0" step="50" value="{{ posted_budget }}" required></div>
+        <div><label for="group_size">Group size</label><input id="group_size" type="number" name="group_size" min="1" value="{{ posted_group|default:'1' }}" required></div>
+        <div><button type="submit">Find matches</button></div>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{# Results of whichever search was just run. #}
+{% block filter %}
+  {% if searching %}
+    <h3 class="section-title">Search results</h3>
+    <ul class="result-list">
+      {% for t in search_results %}
+        <li><a href="{{ t.get_absolute_url }}">{{ t.title }}</a>
+          <span class="meta">&middot; {% for stop in t.stops.all %}{{ stop.destination.name }}{% if not forloop.last %} &rarr; {% endif %}{% endfor %} &middot; {{ t.get_status_display }}</span></li>
+      {% empty %}
+        <li class="muted"><em>No trips match that search.</em></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if budget_searched %}
+    <h3 class="section-title">Trips within your budget</h3>
+    {% if budget_error %}
+      <p class="errorlist">{{ budget_error }}</p>
+    {% else %}
+      <ul class="result-list">
+        {% for t in budget_results %}
+          <li><a href="{{ t.get_absolute_url }}">{{ t.title }}</a>
+            <span class="meta">&middot; from ${{ t.budget_min_usd|floatformat:0 }} &middot; {{ t.seats_open }} seat{{ t.seats_open|pluralize }} left</span></li>
+        {% empty %}
+          <li class="muted"><em>No open trips fit that budget and group size.</em></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{# The full list of community trips. #}
+{% block content %}
+  <h3 class="section-title">All community trips</h3>
+  <div class="trip-grid">
+    {% for trip in trips %}
+      <a class="trip-card" href="{{ trip.get_absolute_url }}">
+        <span class="badge community">{{ trip.get_status_display }}</span>
+        <span class="seats">{{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left</span>
+        <p class="title">{{ trip.title }}</p>
+        <p class="route">{% for stop in trip.stops.all %}{{ stop.destination.name }}{% if not forloop.last %} &rarr; {% endif %}{% empty %}Route not set yet{% endfor %}</p>
+        <p class="meta">{{ trip.start_date }} &ndash; {{ trip.end_date }} &middot; {{ trip.duration_nights }} nights &middot; {{ trip.owner.display_name }}{% if trip.owner.is_domain_verified %} &#10003;{% endif %}</p>
+      </a>
+    {% empty %}
+      <p class="empty-note">No community trips yet.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{# Totals and grouped summaries. #}
+{% block stats %}
+  <h3 class="section-title">Summaries</h3>
+  <div class="stats">
+    <div class="stat-chip"><strong>{{ total_trips }}</strong><span>trips in total</span></div>
+    <div class="stat-chip"><strong>{{ public_trips }}</strong><span>posted publicly</span></div>
+    <div class="stat-chip"><strong>{{ total_requests }}</strong><span>join requests</span></div>
+  </div>
+  <div class="trip-grid" style="margin-top:.8rem">
+    <div>
+      <table class="data">
+        <thead><tr><th>Destination</th><th class="num">Trips</th><th class="num">Public</th></tr></thead>
+        <tbody>
+          {% for d in trips_per_destination %}
+            <tr><td>{{ d.name }}, {{ d.country }}</td><td class="num">{{ d.n_trips }}</td><td class="num">{{ d.n_public }}</td></tr>
+          {% empty %}
+            <tr><td colspan="3" class="muted"><em>No destinations with trips.</em></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table class="data">
+        <thead><tr><th>Join request status</th><th class="num">Requests</th></tr></thead>
+        <tbody>
+          {% for row in requests_per_status %}
+            <tr><td>{{ row.status|capfirst }}</td><td class="num">{{ row.n }}</td></tr>
+          {% empty %}
+            <tr><td colspan="2" class="muted"><em>No join requests yet.</em></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

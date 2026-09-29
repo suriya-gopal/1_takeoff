@@ -5,12 +5,28 @@
   <p class="meta">Build an itinerary, browse trips other travelers have posted, and find companions
      before you book.</p>
 
-  <!-- Section 2 View 4 (generic ListView), filtered to public trips —
-       this is the real "Community-posted trips" section from the Home/Landing wireframe (Screen 3). -->
+  <p>
+    <a class="button secondary" href="{% url 'trips:trip-search' %}">Search community trips</a>
+  </p>
+
+  <!-- Popular destinations: the trip counts come from a database Count(), not hard-coded numbers. -->
+  <h3 class="section-title">Popular destinations</h3>
+  <div class="trip-grid">
+    {% for d in popular %}
+      <a class="trip-card" href="{% url 'trips:trip-search' %}?q={{ d.name|urlencode }}">
+        <p class="title">{{ d.name }}, {{ d.country }}</p>
+        <p class="meta">{{ d.n_trips }} trip{{ d.n_trips|pluralize }} &middot; about ${{ d.avg_daily_cost_usd|floatformat:0 }}/day</p>
+      </a>
+    {% empty %}
+      <p class="empty-note">No destinations have trips yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Community-posted trips: public trips only. -->
   <h3 class="section-title">Community-posted trips</h3>
   <div class="trip-grid">
     {% for trip in trips %}
-      <a class="trip-card" href="{% url 'trips:trip-detail' trip.pk %}">
+      <a class="trip-card" href="{{ trip.get_absolute_url }}">
         <span class="badge community">Community</span>
         <span class="seats">{{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left</span>
         <p class="title">{{ trip.title }}</p>

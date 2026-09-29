@@ -4,7 +4,7 @@
   <h2 class="section-title">Trips</h2>
   <div class="trip-grid">
     {% for trip in trips %}
-      <a class="trip-card" href="{% url 'trips:trip-detail' trip.pk %}">
+      <a class="trip-card" href="{{ trip.get_absolute_url }}">
         <span class="badge {% if trip.visibility == 'public' %}community{% endif %}">
           {% if trip.visibility == 'public' %}Community{% else %}Private{% endif %}
         </span>

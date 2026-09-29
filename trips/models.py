@@ -11,6 +11,7 @@ drags a city into a new position, all of that city's items travel with it.
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 
 
 class Destination(models.Model):
@@ -186,6 +187,15 @@ class Trip(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.start_date} to {self.end_date})"
+
+    def get_absolute_url(self):
+        """URL of this trip's detail page.
+
+        Templates use {{ trip.get_absolute_url }} instead of building the link by hand,
+        and CreateView redirects here after a trip is saved. The route name must match
+        the one in trips/urls.py.
+        """
+        return reverse("trips:trip-detail", kwargs={"pk": self.pk})
 
     @property
     def duration_nights(self):

@@ -12,3 +12,4 @@ Thumbs.db
 staticfiles/
 media/
 *.bak
+takeoff/ui-ux/staticfiles/

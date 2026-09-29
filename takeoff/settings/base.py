@@ -62,4 +62,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+
+# --- Static files ---------------------------------------------------------
+# Site-wide CSS lives in ONE project-level folder. App-owned images stay inside trips/static/trips/ and are found
+# automatically because APP_DIRS-style discovery is on (django.contrib.staticfiles).
+STATICFILES_DIRS = [BASE_DIR / 'takeoff' / 'ui-ux' / 'static']
+# Where `collectstatic` gathers everything for deployment (git-ignored).
+STATIC_ROOT = BASE_DIR / 'takeoff' / 'ui-ux' / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

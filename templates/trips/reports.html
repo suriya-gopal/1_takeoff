@@ -1,0 +1,84 @@
+{% extends "trips/base.html" %}
+{% block title %}Community report{% endblock %}
+{% block content %}
+  <h2 class="section-title">Community report</h2>
+  <p class="meta">A snapshot of the trips travelers have posted publicly. Download the full list to explore it in a spreadsheet or your own tools.</p>
+
+  <div class="actions">
+    <a class="button" href="{% url 'trips:export-trips-csv' %}">Download CSV</a>
+    <a class="button secondary" href="{% url 'trips:export-trips-json' %}">Download JSON</a>
+  </div>
+
+  <p class="summary-line" aria-label="Totals">
+    <span><strong>{{ total_trips }}</strong> community trip{{ total_trips|pluralize }}</span>
+    <span><strong>{{ total_destinations }}</strong> destination{{ total_destinations|pluralize }}</span>
+    <span><strong>{{ total_seats_open }}</strong> seat{{ total_seats_open|pluralize }} open</span>
+    <span><strong>{{ total_requests }}</strong> join request{{ total_requests|pluralize }}</span>
+  </p>
+
+  <div class="report-grid">
+    <section>
+      <h3 class="section-title">Trips per destination</h3>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Destination</th><th class="num">Planned</th><th class="num">Completed</th><th class="num">Total</th></tr>
+          </thead>
+          <tbody>
+            {% for d in trips_per_destination %}
+              <tr>
+                <td>{{ d.name }}, {{ d.country }}</td>
+                <td class="num">{{ d.n_planned }}</td>
+                <td class="num">{{ d.n_completed }}</td>
+                <td class="num">{{ d.n_trips }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="muted"><em>No community trips yet.</em></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h3 class="section-title">Trips by status</h3>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Status</th><th class="num">Trips</th><th class="num">Avg. budget (USD)</th><th class="num">Seats open</th></tr>
+          </thead>
+          <tbody>
+            {% for row in trips_per_status %}
+              <tr>
+                <td>{{ row.label }}</td>
+                <td class="num">{{ row.n_trips }}</td>
+                <td class="num">${{ row.avg_budget_min|floatformat:"0g" }}&ndash;${{ row.avg_budget_max|floatformat:"0g" }}</td>
+                <td class="num">{{ row.seats_open }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="muted"><em>No community trips yet.</em></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h3 class="section-title">Join requests</h3>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Outcome</th><th class="num">Requests</th></tr>
+          </thead>
+          <tbody>
+            {% for row in requests_per_status %}
+              <tr><td>{{ row.label }}</td><td class="num">{{ row.n_requests }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="muted"><em>No join requests yet.</em></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

@@ -35,6 +35,15 @@
     </table>
   </div>
 
+  <div class="panel">
+    <h3>Use the data</h3>
+    <p class="meta">These feeds are open JSON, so you can chart them in your own tools.</p>
+    <ul class="feed-list">
+      {% for feed in feeds %}
+        <li><span>{{ feed.label }}</span> <a href="{{ feed.url }}" data-feed-url>{{ feed.url }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
 {% endblock %}
 
 {% block scripts %}

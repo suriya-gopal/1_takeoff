@@ -72,6 +72,9 @@
     <p class="meta">
       Exchange rates from <a href="https://frankfurter.dev" target="_blank" rel="noopener">Frankfurter</a>, looked up
       when you convert and not stored. Typical costs use each destination&rsquo;s average daily spend multiplied by the nights you stay.
+      {% if trip.visibility == 'public' %}
+        <a href="{% url 'trips:api-trip-budget' trip.pk %}?currency={{ report.currency }}">View as JSON</a>
+      {% endif %}
     </p>
   {% endif %}
 {% endblock %}

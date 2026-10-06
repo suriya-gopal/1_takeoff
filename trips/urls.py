@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import budget, charts, exports, views
+from . import budget, charts, exports, reports, views
 
 app_name = "trips"
 
@@ -26,7 +26,8 @@ urlpatterns = [
     path("insights/specs/departures.json", charts.departure_chart_json, name="chart-spec-departures"),
     path("charts/trips-by-destination.png", views.trips_by_destination_chart, name="chart-trips-by-destination"),
 
-    # Downloads
+    # Reports and downloads
+    path("reports/", reports.ReportsView.as_view(), name="reports"),
     path("export/trips.csv", exports.export_trips_csv, name="export-trips-csv"),
     path("export/trips.json", exports.export_trips_json, name="export-trips-json"),
 

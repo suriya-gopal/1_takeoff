@@ -1,8 +1,7 @@
 """
-Automated proof that the constraints and on_delete rules actually hold.
+Model constraints, pages, search, forms and the JSON API.
 
-These mirror the checks in seed_data.py but run in an isolated test database,
-so they can be re-run at any time with:  python manage.py test trips
+Run with:  python manage.py test trips
 """
 
 from datetime import date
@@ -10,7 +9,8 @@ from datetime import date
 from django.contrib.auth.models import User
 from django.db.models import ProtectedError
 from django.db.utils import IntegrityError
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from .models import Destination, ItineraryItem, JoinRequest, Traveler, Trip, TripStop
 
@@ -74,17 +74,7 @@ class TripModelConstraintTests(TestCase):
             JoinRequest.objects.create(trip=self.trip, requester=bob)
 
 
-# ===========================================================================
-# Tests for navigation, search, chart, forms and the JSON API.
-# Run with:  python manage.py test trips
-# ===========================================================================
-import json
-
-from django.test import Client
-from django.urls import reverse
-
-
-class A3BaseTestCase(TestCase):
+class TripDataTestCase(TestCase):
     """Small shared data set: one public planned trip, one private draft, one completed."""
 
     @classmethod
@@ -110,7 +100,7 @@ class A3BaseTestCase(TestCase):
         cls.done = make("Kyoto memories", cls.kyoto, visibility=Trip.PUBLIC, status=Trip.COMPLETED)
 
 
-class UrlAndNavigationTests(A3BaseTestCase):
+class UrlAndNavigationTests(TripDataTestCase):
     def test_home_page_and_nav_use_named_urls(self):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
@@ -125,7 +115,7 @@ class UrlAndNavigationTests(A3BaseTestCase):
         self.assertContains(self.client.get(reverse("trips:trip-list")), self.public.get_absolute_url())
 
 
-class SearchTests(A3BaseTestCase):
+class SearchTests(TripDataTestCase):
     def test_full_list_never_contains_private_trips(self):
         resp = self.client.get(reverse("trips:trip-search"))
         self.assertContains(resp, "Italy loop")
@@ -161,7 +151,7 @@ class SearchTests(A3BaseTestCase):
         self.assertEqual(rome.n_trips, 1)
 
 
-class ChartTests(A3BaseTestCase):
+class ChartTests(TripDataTestCase):
     def test_chart_endpoint_returns_png(self):
         resp = self.client.get(reverse("trips:chart-trips-by-destination"))
         self.assertEqual(resp["Content-Type"], "image/png")
@@ -177,7 +167,7 @@ class ChartTests(A3BaseTestCase):
         self.assertContains(resp, "<figcaption>")
 
 
-class FormTests(A3BaseTestCase):
+class FormTests(TripDataTestCase):
     def valid_trip_data(self, **over):
         data = {"owner": self.bob.pk, "title": "Roman weekend", "start_date": "2026-11-01", "end_date": "2026-11-08",
                 "budget_min_usd": "800", "budget_max_usd": "1200", "group_size": "2", "seats_open": "2",
@@ -224,7 +214,7 @@ class FormTests(A3BaseTestCase):
         self.assertEqual(JoinRequest.objects.count(), 0)
 
 
-class ApiTests(A3BaseTestCase):
+class ApiTests(TripDataTestCase):
     def test_api_trips_only_public_and_json_mime(self):
         resp = self.client.get(reverse("trips:api-trips"))
         self.assertEqual(resp["Content-Type"], "application/json")

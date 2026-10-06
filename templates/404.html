@@ -1,0 +1,10 @@
+{% extends "trips/base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+  <h2 class="section-title">We couldn&rsquo;t find that page</h2>
+  <p class="meta">The link may be out of date, or the trip may have been removed.</p>
+  <p>
+    <a class="button" href="{% url 'trips:home' %}">Back to home</a>
+    <a class="button secondary" href="{% url 'trips:trip-search' %}">Search trips</a>
+  </p>
+{% endblock %}

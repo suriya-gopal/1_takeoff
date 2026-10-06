@@ -1,16 +1,13 @@
 """
-WSGI config for takeoff project.
+WSGI entry point for production servers such as PythonAnywhere.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.1/howto/deployment/wsgi/
+Uses the production settings unless DJANGO_SETTINGS_MODULE says otherwise.
 """
 
 import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'takeoff.settings.development')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'takeoff.settings.production')
 
 application = get_wsgi_application()

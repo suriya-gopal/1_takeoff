@@ -19,6 +19,10 @@ Reflection (bonus):
 Settings split into base/development/production (takeoff/settings/{base,development,production}.py
 + secrets_environment.py using django-environ). SECRET_KEY moved out of source into .env.
 
+Mobile-first base.html chosen deliberately - team decided this same responsive
+Django build gets wrapped with Capacitor later for the native app, so there's one
+frontend to build, not two.
+
 Blockers / open questions: none yet.
 
 --- Update: homepage nav added ---
@@ -33,6 +37,9 @@ share the same template — this is deliberate: separation of concerns. trip_lis
 with no links: the point of that view is showing the lowest-level
 loader.get_template() + HttpResponse mechanics, not the navigation.
 
+--- Update: templates re-grounded in the wireframes ---
+Pulled the actual low-fidelity wireframe deck (docs/wireframes/TakeOff_Wireframes-2.pdf)
+back in and matched the four main views to real screens instead of a generic demo layout:
 - home() -> "Home / Landing": header + search bar shape, "Community-posted trips"
   card preview (real public Trip data, capped at 6).
 - TripListView (generic CBV) + trip_list_view (render() FBV) -> "Community Hub":
@@ -47,6 +54,8 @@ loader.get_template() + HttpResponse mechanics, not the navigation.
 ==========================================================================
 SEARCH, FORMS, CHART, STATIC FILES AND API
 ==========================================================================
+All screens were checked against the wireframes (docs/wireframes/TakeOff_Wireframes-2.pdf):
+Home, Trip Input ("Plan your trip") and Community Hub.
 
 --- URL linking and get_absolute_url() ---------------------------------------
 Trip.get_absolute_url() returns reverse("trips:trip-detail", kwargs={"pk": self.pk}).
@@ -83,6 +92,7 @@ Organisation choice: site-wide CSS lives in ONE project-level folder,
 takeoff/ui-ux/static/css/ (normalize.css + our own style.css), registered with
 STATICFILES_DIRS. The logo stays in the app (trips/static/trips/img/logo.png),
 because an image the app owns belongs with the app and is namespaced under trips/.
+Rule of thumb used: shared look-and-feel = project level, app-owned assets = app level.
 The earlier inline <style> block was moved into style.css; colours come from the logo.
 Cache busting, two layers:
   1. Development: base.html appends ?v={% now "U" %} (a timestamp) to the CSS URLs,
@@ -105,7 +115,8 @@ if traffic grew, cache it.
 --- API plan ------------------------------------------------------------------------
 How the API will grow: the read-only endpoints are the first step. Next steps are
 authentication (so owners can see their own private trips), then write endpoints
-(create trip, request to join, accept/decline) that reuse the same forms and validation.
+(create trip, request to join, accept/decline) that reuse the same forms and validation,
+and finally the mobile wrapper (Capacitor, see the notes above) calling these same URLs.
 Data served now: PUBLIC trips only (title, dates, route, budget range, seats open,
 owner display name + verified flag, url), and destinations with public-trip counts.
 Never served: private trips, e-mail addresses, join-request messages.
@@ -117,4 +128,5 @@ base.html footer is four columns: TakeOff blurb, Explore, Get started, Contact u
 Links use {% url %}; the copyright year uses {% now "Y" %} so it never goes stale.
 The contact address (xyz@takeoff.com) is a placeholder to swap before launch.
 Layout is a CSS grid (.footer-grid) that collapses to one column on phones.
-
+The normalize.css credit line was removed from the footer; the MIT licence text is
+still in normalize.css's header comment, which satisfies its terms.

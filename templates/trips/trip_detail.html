@@ -7,6 +7,7 @@
      &middot; {{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left
      &middot; ${{ trip.budget_min_usd|floatformat:0 }}&ndash;${{ trip.budget_max_usd|floatformat:0 }} per person
      &middot; posted by {{ trip.owner.display_name }}{% if trip.owner.is_domain_verified %} &#10003; verified{% endif %}</p>
+  <p><a class="button secondary" href="{% url 'trips:trip-budget' trip.pk %}">See this budget in local currency</a></p>
 
   <h3 class="section-title">Route</h3>
   <div class="trip-grid">

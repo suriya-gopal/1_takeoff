@@ -1,6 +1,4 @@
-"""
-takeoff/settings/base.py — shared settings for development and production.
-"""
+"""Settings shared by every environment. development.py and production.py extend this module."""
 
 from pathlib import Path
 
@@ -17,11 +15,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'trips',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,12 +61,19 @@ TIME_ZONE = 'America/Chicago'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-
-# --- Static files ---------------------------------------------------------
-# Site-wide CSS lives in ONE project-level folder. App-owned images stay inside trips/static/trips/ and are found
-# automatically because APP_DIRS-style discovery is on (django.contrib.staticfiles).
+# Static files
+# Site-wide CSS and JavaScript live in one project-level folder. Images and scripts owned by the
+# trips app stay in trips/static/trips/. `collectstatic` gathers everything into STATIC_ROOT, which
+# is git-ignored and rebuilt on the server at deploy time.
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'takeoff' / 'ui-ux' / 'static']
-# Where `collectstatic` gathers everything for deployment (git-ignored).
 STATIC_ROOT = BASE_DIR / 'takeoff' / 'ui-ux' / 'staticfiles'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Cross-origin access
+# The JSON feeds under /api/ are public and read-only. Allowing the Vega editor's origin lets anyone
+# chart them at https://vega.github.io/editor/ without a proxy.
+CORS_ALLOWED_ORIGINS = ['https://vega.github.io']
+CORS_URLS_REGEX = r'^/api/.*$'
+CORS_ALLOW_METHODS = ['GET', 'HEAD', 'OPTIONS']

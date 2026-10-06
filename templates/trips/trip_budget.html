@@ -1,0 +1,80 @@
+{% extends "trips/base.html" %}
+{% block title %}Budget in local currency &middot; {{ trip.title }}{% endblock %}
+{% block content %}
+  <h2 class="section-title">Budget in local currency</h2>
+  <p class="meta"><a href="{{ trip.get_absolute_url }}">{{ trip.title }}</a>
+     &middot; {{ trip.start_date }} to {{ trip.end_date }} &middot; amounts are per person</p>
+
+  <div class="panel">
+    <form method="get" action="{% url 'trips:trip-budget' trip.pk %}" class="currency-form">
+      <div>
+        <label for="currency">Convert to</label>
+        <select id="currency" name="currency">
+          <option value="">Choose a currency</option>
+          {% for code, name in currencies %}
+            <option value="{{ code }}" {% if code == selected %}selected{% endif %}>{{ code }} &mdash; {{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit">Convert</button>
+    </form>
+  </div>
+
+  {% if error %}
+    <div class="notice error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  {% if report %}
+    <div class="stats">
+      <div class="stat-chip">
+        <strong>{{ report.budget_per_person.min_local|floatformat:"0g" }}&ndash;{{ report.budget_per_person.max_local|floatformat:"0g" }}</strong>
+        <span>Your budget in {{ report.currency }} (${{ report.budget_per_person.min_usd|floatformat:"0g" }}&ndash;${{ report.budget_per_person.max_usd|floatformat:"0g" }})</span>
+      </div>
+      {% if report.estimate_per_person %}
+        <div class="stat-chip">
+          <strong>{{ report.estimate_per_person.local|floatformat:"0g" }}</strong>
+          <span>Typical cost for this route in {{ report.currency }} (${{ report.estimate_per_person.usd|floatformat:"0g" }})</span>
+        </div>
+      {% endif %}
+      <div class="stat-chip">
+        <strong>{{ report.rate.usd_to_local|floatformat:3 }}</strong>
+        <span>{{ report.currency }} per US dollar{% if report.rate.as_of %} on {{ report.rate.as_of }}{% endif %}</span>
+      </div>
+    </div>
+
+    <p class="verdict {{ report.assessment.status }}">{{ report.assessment.message }}</p>
+
+    <h3 class="section-title">Typical costs along the route</h3>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Stop</th><th class="num">Nights</th><th class="num">Per night (USD)</th>
+            <th class="num">Total (USD)</th><th class="num">Total ({{ report.currency }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stop in report.route %}
+            <tr>
+              <td>{{ stop.destination }}, {{ stop.country }}</td>
+              <td class="num">{{ stop.nights }}</td>
+              <td class="num">${{ stop.avg_daily_cost_usd|floatformat:"0g" }}</td>
+              <td class="num">${{ stop.estimated_usd|floatformat:"0g" }}</td>
+              <td class="num">{{ stop.estimated_local|floatformat:"0g" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="muted"><em>No stops added to this trip yet.</em></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="meta">
+      Exchange rates from <a href="https://frankfurter.dev" target="_blank" rel="noopener">Frankfurter</a>, looked up
+      when you convert and not stored. Typical costs use each destination&rsquo;s average daily spend multiplied by the nights you stay.
+      {% if trip.visibility == 'public' %}
+        <a href="{% url 'trips:api-trip-budget' trip.pk %}?currency={{ report.currency }}">View as JSON</a>
+      {% endif %}
+    </p>
+  {% endif %}
+{% endblock %}

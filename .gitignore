@@ -1,15 +1,27 @@
+# Secrets and local configuration (keep .env.example tracked)
 .env
+
+# Python
 __pycache__/
 *.py[cod]
-*.pyc
+*.bak
 .venv/
 venv/
 env/
+
+# Django: rebuilt on every deploy with `collectstatic`
+staticfiles/
+takeoff/ui-ux/staticfiles/
+media/
+*.log
+
+# Editors and operating systems
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
-staticfiles/
-media/
-*.bak
-takeoff/ui-ux/staticfiles/
+
+# Test output
+.coverage
+htmlcov/
+.pytest_cache/

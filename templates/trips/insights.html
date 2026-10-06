@@ -1,25 +1,54 @@
 {% extends "trips/base.html" %}
+{% load static %}
 {% block title %}Insights{% endblock %}
 {% block content %}
   <h2 class="section-title">Where is everyone going?</h2>
-  <p class="meta">Popular destinations, counted from the trips in the database.</p>
+  <p class="meta">What the TakeOff community is planning: the most popular destinations and the months people travel.</p>
 
   <figure class="chart">
-    {# The image is drawn by a Django view at this URL (see trips_by_destination_chart in views.py). #}
-    <img src="{% url 'trips:chart-trips-by-destination' %}" width="700" height="360"
-         alt="Stacked bar chart of the number of public and private trips for each destination">
-    <figcaption>Figure 1. Trips per destination, split into public (community) and private trips.</figcaption>
+    <div class="chart-canvas" data-chart-spec="{{ destinations_spec_url }}"
+         role="img" aria-label="Bar chart of community trips for each destination"></div>
+    <noscript>
+      <img src="{% url 'trips:chart-trips-by-destination' %}" width="700" height="360"
+           alt="Stacked bar chart of the number of public and private trips for each destination">
+    </noscript>
+    <figcaption>Community trips per destination. Hover over a bar for the country and typical daily cost.</figcaption>
   </figure>
 
-  <h3 class="section-title">The numbers behind the chart</h3>
-  <table class="data">
-    <thead><tr><th>Destination</th><th class="num">Public</th><th class="num">Total</th></tr></thead>
-    <tbody>
-      {% for d in rows %}
-        <tr><td>{{ d.name }}, {{ d.country }}</td><td class="num">{{ d.n_public }}</td><td class="num">{{ d.n_trips }}</td></tr>
-      {% empty %}
-        <tr><td colspan="3" class="muted"><em>No trips yet.</em></td></tr>
+  <figure class="chart">
+    <div class="chart-canvas" data-chart-spec="{{ departures_spec_url }}"
+         role="img" aria-label="Line chart of community trips departing each month"></div>
+    <figcaption>Community trips by departure month, so you can see when companions are most likely to be travelling.</figcaption>
+  </figure>
+
+  <h3 class="section-title">The numbers behind the charts</h3>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Destination</th><th class="num">Community trips</th><th class="num">All trips</th></tr></thead>
+      <tbody>
+        {% for d in rows %}
+          <tr><td>{{ d.name }}, {{ d.country }}</td><td class="num">{{ d.n_public }}</td><td class="num">{{ d.n_trips }}</td></tr>
+        {% empty %}
+          <tr><td colspan="3" class="muted"><em>No trips yet.</em></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Use the data</h3>
+    <p class="meta">These feeds are open JSON, so you can chart them in your own tools.</p>
+    <ul class="feed-list">
+      {% for feed in feeds %}
+        <li><span>{{ feed.label }}</span> <a href="{{ feed.url }}" data-feed-url>{{ feed.url }}</a></li>
       {% endfor %}
-    </tbody>
-  </table>
+    </ul>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.33.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.23.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.29.0"></script>
+  <script src="{% static 'trips/js/insights.js' %}"></script>
 {% endblock %}

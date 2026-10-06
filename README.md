@@ -27,6 +27,9 @@ optionally post the trip publicly so other travelers can ask to join.
 - **Verified travelers** — accounts signing up with a `.edu` / company
   domain get a verified badge, so strangers feel comfortable joining each
   other's trips.
+- **Insights** — interactive Vega-Lite charts fed by JSON endpoints.
+- **Trip budget in local currency** — live exchange rates for any public trip.
+- **Reports and exports** — community totals plus CSV and JSON downloads.
 - **Django admin** — full CRUD over every model out of the box.
 
 ---
@@ -83,9 +86,14 @@ takeoff/
 trips/
   forms.py               # TripForm (plan a trip), JoinRequestForm (request to join)
   models.py              # Destination, Traveler, Trip, TripStop, ItineraryItem, JoinRequest
-  views.py                # pages, search, forms, chart, JSON API (FBV and CBV)
+  views.py                # pages, search, forms, PNG chart, JSON API (FBV and CBV)
+  charts.py               # chart feeds, Vega-Lite specs, insights page
+  budget.py               # exchange-rate lookup and trip budget views
+  exports.py              # CSV / JSON downloads
+  reports.py              # community report page
   urls.py
   static/trips/img/logo.png
+  static/trips/js/insights.js
 templates/
   trips/
     base.html             # header (logo + "TakeOff"), nav, {% block content %}, footer
@@ -95,10 +103,14 @@ templates/
     trip_detail.html
     trip_search.html      # search forms, results, summaries
     trip_form.html        # plan a trip
-    insights.html         # chart page
+    insights.html         # interactive charts
+    trip_budget.html      # budget in local currency
+    reports.html          # report tables and downloads
+  404.html, 500.html
 docs/
   wireframes/             # product wireframe deck
   notes/notes.txt          # running project notes
+  charts/                 # Vega-Lite specifications
   screenshots/             # app screenshots used in this README
 ER_Diagram/
   er_diagram.pdf
@@ -120,7 +132,11 @@ seed_data.py
 | `/trips/generic/` | `TripListView` | CBV — generic `ListView`, filtered to public trips |
 | `/trips/search/` | `TripSearchView` | CBV — `ListView` that handles both the filter search and the budget search |
 | `/trips/new/` | `TripCreateView` | CBV — `CreateView` for the "Plan your trip" form |
-| `/insights/` | `insights()` | FBV — chart page |
+| `/insights/` | `charts.insights_page` | FBV — interactive charts |
+| `/insights/specs/destinations.json`, `/insights/specs/departures.json` | `charts.destination_chart_json`, `charts.departure_chart_json` | FBV — Vega-Lite specifications |
+| `/trips/<pk>/budget/` | `budget.trip_budget_page` | FBV — trip budget in a chosen currency |
+| `/reports/` | `reports.ReportsView` | CBV — community totals and downloads |
+| `/export/trips.csv`, `/export/trips.json` | `exports.export_trips_csv`, `exports.export_trips_json` | FBV — file downloads |
 | `/charts/trips-by-destination.png` | `trips_by_destination_chart()` | FBV — Matplotlib PNG |
 | `/api/…` | see “JSON API” below | FBV + CBV JSON endpoints |
 | `/admin/` | — | Django Admin |
@@ -148,8 +164,10 @@ and summaries (totals, trips per destination, join requests per status).
 ## Styling
 
 `takeoff/ui-ux/static/css/` holds `normalize.css` and the TakeOff `style.css`
-(logo colours, header, cards, forms). Cache busting: a timestamp query string
-in development and `ManifestStaticFilesStorage` (hashed file names) in production.
+(logo colours, header, cards, forms). Cache busting: `ManifestStaticFilesStorage` (hashed file names) in production.
+
+Static files are served by Django in development and by the host's static
+mapping in production (see Deployment).
 
 **Footer** (`base.html`, styled by `.footer-grid` in `style.css`): four columns —
 a TakeOff blurb, Explore links, Get started links and Contact us (placeholder
@@ -157,11 +175,43 @@ address `xyz@takeoff.com`, Champaign, IL) — above a copyright line whose year
 comes from `{% now "Y" %}`. The columns collapse to one on narrow screens. The
 normalize.css MIT licence stays in that file's header comment.
 
-## Chart (`/insights/`)
+## Charts (`/insights/`)
 
-A stacked bar chart of public vs private trips per destination, computed from
-the database and served as a PNG from `/charts/trips-by-destination.png`
-(drawn in memory with `BytesIO`, nothing written to disk).
+Two Vega-Lite v5 charts rendered in the browser with vega-embed:
+
+- **Public trips by destination** — bar chart, coloured by country.
+- **Departures by month** — line chart of public trips and open seats.
+
+Each chart loads its data from a JSON feed (`/api/insights/destinations/`,
+`/api/insights/departures/`) and its specification from
+`/insights/specs/…json`, so the same feeds can be opened in the Vega editor
+(CORS is enabled for `https://vega.github.io` on `/api/` only). Saved specifications
+for local use are in `docs/charts/`. The original Matplotlib PNG remains at
+`/charts/trips-by-destination.png` and is the fallback when scripts are blocked.
+
+![Insights](docs/screenshots/insights-charts.png)
+![Insights on mobile](docs/screenshots/insights-charts-mobile.png)
+
+## Trip budget in local currency
+
+`/trips/<pk>/budget/` converts a trip's budget range with the daily
+exchange rates from [Frankfurter](https://frankfurter.dev) (no API key). The
+call lives in `trips/budget.py` with a 5-second timeout. The JSON version is
+`/api/trips/<pk>/budget/?currency=EUR`; failures come back as JSON with a
+`400` (unsupported currency), `404` (not a public trip), `502` (rate service
+problem) or `504` (rate service timeout). Rates are fetched per request and not stored.
+
+![Trip budget](docs/screenshots/trip-budget.png)
+
+## Reports and exports
+
+`/reports/` lists trips per destination, trips per status and join requests
+per status, using database aggregations on public trips. The page links to
+`/export/trips.csv` and `/export/trips.json`; both download with a timestamped
+file name, and the CSV neutralises cells that begin with `=`, `+`, `-` or `@`
+so spreadsheets don't run them as formulas.
+
+![Reports](docs/screenshots/reports.png)
 
 ## Forms
 
@@ -181,6 +231,9 @@ query string; a bad filter value returns a JSON `400` error.
 | `/api/trips/` | function view `api_trips` | `q`, `country`, `status`, `max_budget`, `min_seats` |
 | `/api/destinations/` | class view `DestinationsAPI` | `q`, `country` |
 | `/api/destinations/popular/` | function view | — |
+| `/api/insights/destinations/` | function view | — |
+| `/api/insights/departures/` | function view | — |
+| `/api/trips/<pk>/budget/` | function view | `currency` |
 | `/api/ping/json/` | `JsonResponse` → `application/json` | — |
 | `/api/ping/http-manual-json/` | `HttpResponse` + `json.dumps` → `application/json` | — |
 | `/api/ping/http-default/` | `HttpResponse` → `text/html; charset=utf-8` | — |
@@ -212,7 +265,7 @@ git clone git@github.com:suriya-gopal/1_takeoff.git
 cd 1_takeoff
 
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -r requirements.txt   # Django, django-environ, matplotlib
+pip install -r requirements.txt   # Django, django-environ, django-cors-headers, matplotlib, requests
 
 cp .env.example .env    # then replace the SECRET_KEY value with any random string
 
@@ -248,6 +301,25 @@ python manage.py test trips
 Production static files: `DJANGO_SETTINGS_MODULE=takeoff.settings.production python manage.py collectstatic`.
 
 ---
+
+## Deployment (PythonAnywhere)
+
+1. In a Bash console: `git clone` the repository, then
+   `python3 -m venv ~/.venvs/takeoff && source ~/.venvs/takeoff/bin/activate`
+   and `pip install -r requirements.txt`.
+2. Create `.env` from `.env.example`: a long random `SECRET_KEY`,
+   `ALLOWED_HOSTS=<username>.pythonanywhere.com`, and
+   `CSRF_TRUSTED_ORIGINS=https://<username>.pythonanywhere.com`.
+3. `export DJANGO_SETTINGS_MODULE=takeoff.settings.production` and run
+   `python manage.py collectstatic --noinput`.
+4. Web tab: set the virtualenv path, and add a static mapping
+   `/static/` → `<repo>/takeoff/ui-ux/staticfiles`.
+5. In the WSGI file, point the path at the repository and keep
+   `DJANGO_SETTINGS_MODULE = takeoff.settings.production` (the default in `takeoff/wsgi.py`).
+6. Click **Reload**. `db.sqlite3` is committed, so the seeded data appears right away.
+
+Free accounts can only call allowlisted hosts from the server; Frankfurter is
+on that list. Set `HTTPS_ONLY=True` in `.env` to mark cookies secure.
 
 ## Configuration
 

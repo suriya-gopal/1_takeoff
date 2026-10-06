@@ -49,7 +49,7 @@ class TripForm(forms.ModelForm):
             "end_date": forms.DateInput(attrs={"type": "date"}),
         }
         help_texts = {
-            "owner": "There is no login yet, so pick who is planning this trip.",
+            "owner": "Choose who is planning this trip.",
         }
 
     def clean_title(self):
@@ -104,7 +104,7 @@ class JoinRequestForm(forms.ModelForm):
         model = JoinRequest
         fields = ["requester", "message"]
         labels = {"requester": "Requesting as"}
-        help_texts = {"requester": "There is no login yet, so pick who is asking."}
+        help_texts = {"requester": "Choose who is asking."}
         widgets = {"message": forms.Textarea(attrs={"rows": 3, "placeholder": "Say hi — no personal details until the owner accepts."})}
 
     def __init__(self, *args, trip=None, **kwargs):

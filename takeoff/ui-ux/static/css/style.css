@@ -162,3 +162,41 @@ footer.site-footer { text-align: left; padding: 2rem 1rem 1rem; }
 @media (min-width: 640px) {
   .footer-grid { grid-template-columns: 2fr 1fr 1fr 1.4fr; }
 }
+/* ---- Charts ------------------------------------------------------------------- */
+.chart-canvas { width: 100%; min-height: 320px; }
+.chart-canvas .vega-embed { width: 100%; }
+.vega-embed summary { color: var(--muted); }
+.vega-embed .vega-actions a { color: var(--navy); }
+.feed-list { list-style: none; margin: 0; padding: 0; }
+.feed-list li { display: flex; flex-wrap: wrap; gap: .25rem .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.feed-list li:last-child { border-bottom: 0; }
+.feed-list span { font-weight: 600; min-width: 11rem; color: var(--navy); }
+.feed-list a { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; word-break: break-all; }
+
+/* ---- Tables on small screens, report layout and totals ---------------------------- */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); }
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: .9rem 0; }
+.summary-line {
+  display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; margin: 1rem 0; padding: .8rem 1rem;
+  background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--sun); border-radius: 10px;
+}
+.summary-line strong { font-size: 1.2rem; color: var(--navy); }
+.report-grid { display: grid; grid-template-columns: 1fr; gap: 0 1.2rem; }
+.report-grid section { min-width: 0; }
+
+/* ---- Budget conversion --------------------------------------------------------------- */
+.currency-form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; }
+.currency-form > div { flex: 1 1 260px; min-width: 0; }
+.currency-form label { margin-top: 0; }
+.currency-form select { width: 100%; height: 2.75rem; }
+.notice { padding: .8rem 1rem; border-radius: 10px; margin: 1rem 0; border: 1px solid var(--border); background: var(--surface); }
+.notice.error { border-color: #f0b8b4; background: #fdecea; color: var(--danger); }
+.verdict { padding: .7rem 1rem; border-radius: 10px; margin: 1rem 0; font-weight: 600; background: #eaf2fc; color: var(--navy); }
+.verdict.within, .verdict.under { background: #e6f4ea; color: #1e6b3a; }
+.verdict.over { background: #fdecea; color: var(--danger); }
+.verdict.unknown, .verdict.unset { background: #eef3fa; color: var(--muted); }
+
+@media (min-width: 900px) {
+  .report-grid { grid-template-columns: 1fr 1fr; }
+  .report-grid section:first-child { grid-column: 1 / -1; }
+}

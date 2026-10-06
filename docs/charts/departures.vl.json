@@ -1,0 +1,64 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Public trips departing per month",
+  "data": {
+    "url": "http://127.0.0.1:8000/api/insights/departures/"
+  },
+  "width": "container",
+  "height": 280,
+  "mark": {
+    "type": "line",
+    "color": "#0b2f6b",
+    "strokeWidth": 3,
+    "point": {
+      "filled": true,
+      "size": 80,
+      "color": "#18a0f0"
+    }
+  },
+  "encoding": {
+    "x": {
+      "field": "month",
+      "type": "temporal",
+      "timeUnit": "utcyearmonth",
+      "title": null,
+      "axis": {
+        "format": "%b %Y",
+        "labelAngle": -30
+      }
+    },
+    "y": {
+      "field": "public_trips",
+      "type": "quantitative",
+      "title": "Trips departing",
+      "axis": {
+        "tickMinStep": 1,
+        "format": "d",
+        "values": [
+          0,
+          1,
+          2
+        ]
+      },
+      "scale": {
+        "zero": true
+      }
+    },
+    "tooltip": [
+      {
+        "field": "month",
+        "type": "temporal",
+        "timeUnit": "utcyearmonth",
+        "title": "Month"
+      },
+      {
+        "field": "public_trips",
+        "title": "Trips departing"
+      },
+      {
+        "field": "seats_open",
+        "title": "Seats open"
+      }
+    ]
+  }
+}

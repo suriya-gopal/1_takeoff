@@ -1,0 +1,74 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Public trips per destination",
+  "data": {
+    "url": "http://127.0.0.1:8000/api/insights/destinations/"
+  },
+  "width": "container",
+  "height": 320,
+  "mark": {
+    "type": "bar",
+    "cornerRadiusEnd": 4
+  },
+  "encoding": {
+    "x": {
+      "field": "destination",
+      "type": "nominal",
+      "sort": "-y",
+      "title": null,
+      "axis": {
+        "labelAngle": -35,
+        "labelLimit": 120
+      }
+    },
+    "y": {
+      "field": "public_trips",
+      "type": "quantitative",
+      "title": "Community trips",
+      "axis": {
+        "tickMinStep": 1,
+        "format": "d",
+        "values": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "color": {
+      "field": "country",
+      "type": "nominal",
+      "title": "Country",
+      "scale": {
+        "range": [
+          "#0b2f6b",
+          "#18a0f0",
+          "#ffb62d",
+          "#2f8f6b",
+          "#8a5cf5",
+          "#e4572e",
+          "#5b6b85"
+        ]
+      }
+    },
+    "tooltip": [
+      {
+        "field": "destination",
+        "title": "Destination"
+      },
+      {
+        "field": "country",
+        "title": "Country"
+      },
+      {
+        "field": "public_trips",
+        "title": "Community trips"
+      },
+      {
+        "field": "avg_daily_cost_usd",
+        "title": "Avg. daily cost (USD)",
+        "format": "$,.0f"
+      }
+    ]
+  }
+}

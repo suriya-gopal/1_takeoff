@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import charts, views
+from . import budget, charts, exports, views
 
 app_name = "trips"
 
@@ -14,6 +14,7 @@ urlpatterns = [
     path("trips/", views.trip_list_view, name="trip-list"),
     path("trips/generic/", views.TripListView.as_view(), name="trip-list-generic"),
     path("trips/<int:pk>/", views.TripDetailView.as_view(), name="trip-detail"),
+    path("trips/<int:pk>/budget/", budget.trip_budget_page, name="trip-budget"),
 
     # Search and plan-a-trip form
     path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
@@ -25,9 +26,13 @@ urlpatterns = [
     path("insights/specs/departures.json", charts.departure_chart_json, name="chart-spec-departures"),
     path("charts/trips-by-destination.png", views.trips_by_destination_chart, name="chart-trips-by-destination"),
 
+    # Downloads
+    path("export/trips.csv", exports.export_trips_csv, name="export-trips-csv"),
+    path("export/trips.json", exports.export_trips_json, name="export-trips-json"),
 
     # JSON API: trips and destinations
     path("api/trips/", views.api_trips, name="api-trips"),
+    path("api/trips/<int:pk>/budget/", budget.api_trip_budget, name="api-trip-budget"),
     path("api/destinations/", views.DestinationsAPI.as_view(), name="api-destinations"),
     path("api/destinations/popular/", views.api_popular_destinations, name="api-destinations-popular"),
 

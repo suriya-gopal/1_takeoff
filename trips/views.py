@@ -7,17 +7,31 @@ from io import BytesIO
 import matplotlib
 matplotlib.use("Agg")  # draw to memory only; a server has no display
 import matplotlib.pyplot as plt
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template import loader
 from django.utils.dateparse import parse_date
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import CreateView, ListView
 from matplotlib.ticker import MaxNLocator
 
+from .access import api_login_required
 from .forms import JoinRequestForm, TripForm
-from .models import Destination, JoinRequest, Trip
+from .models import Destination, JoinRequest, Traveler, Trip
+
+
+def visible_trips(user):
+    """
+    Trips a signed-in user may open: every public trip plus their own private ones.
+
+    Private trips belong to their owner, so another traveler gets a 404 for them, the same answer
+    as for a trip that does not exist.
+    """
+    return Trip.objects.filter(Q(visibility=Trip.PUBLIC) | Q(owner__user=user))
 
 
 def destination_popularity():
@@ -60,9 +74,10 @@ def trip_manual_view(request):
     return HttpResponse(template.render({"trips": trips}, request))
 
 
+@login_required
 def trip_list_view(request):
-    """Every trip, soonest departure first."""
-    trips = Trip.objects.select_related("owner").prefetch_related("stops__destination")
+    """Every public trip plus the signed-in traveler's private ones, soonest departure first."""
+    trips = visible_trips(request.user).select_related("owner").prefetch_related("stops__destination")
     return render(request, "trips/trip_list.html", {"trips": trips})
 
 
@@ -75,12 +90,12 @@ class TripListView(ListView):
     queryset = Trip.objects.filter(visibility=Trip.PUBLIC)
 
 
-class TripDetailView(View):
+class TripDetailView(LoginRequiredMixin, View):
     """
     One trip: its route, its join requests and the "Request to join" form.
 
-    GET shows the page with an empty form. POST validates the form, saves a join request
-    and redirects back to the trip.
+    GET shows the page with an empty form. POST validates the form, saves a join request from the
+    signed-in traveler and redirects back to the trip. Requires login.
     """
 
     def _render(self, request, trip, form, status=200):
@@ -97,33 +112,37 @@ class TripDetailView(View):
         )
 
     def get(self, request, pk):
-        trip = get_object_or_404(Trip, pk=pk)
+        trip = get_object_or_404(visible_trips(request.user), pk=pk)
         return self._render(request, trip, JoinRequestForm(trip=trip))
 
     def post(self, request, pk):
-        trip = get_object_or_404(Trip, pk=pk)
-        form = JoinRequestForm(request.POST, trip=trip)
+        trip = get_object_or_404(visible_trips(request.user), pk=pk)
+        form = JoinRequestForm(request.POST, trip=trip, requester=Traveler.for_user(request.user))
         if form.is_valid():
             form.save()
             return redirect(trip.get_absolute_url())  # redirect so a refresh cannot re-submit the form
         return self._render(request, trip, form, status=400)
 
 
-class TripCreateView(CreateView):
+class TripCreateView(LoginRequiredMixin, CreateView):
     """
-    "Plan your trip" form. A valid submission saves the trip with its stops and redirects to the
-    new trip's page (CreateView falls back to Trip.get_absolute_url).
+    "Plan your trip" form. A valid submission saves the trip, owned by the signed-in traveler, with
+    its stops and redirects to the new trip's page (CreateView falls back to Trip.get_absolute_url).
     """
 
     model = Trip
     form_class = TripForm
     template_name = "trips/trip_form.html"
 
+    def form_valid(self, form):
+        form.instance.owner = Traveler.for_user(self.request.user)
+        return super().form_valid(form)
+
 
 # ---------------------------------------------------------------------------
 # Search
 # ---------------------------------------------------------------------------
-class TripSearchView(ListView):
+class TripSearchView(LoginRequiredMixin, ListView):
     """
     Search page with two forms:
 
@@ -231,6 +250,7 @@ class TripSearchView(ListView):
 # ---------------------------------------------------------------------------
 # Chart image
 # ---------------------------------------------------------------------------
+@login_required
 def trips_by_destination_chart(request):
     """
     GET /charts/trips-by-destination.png — public and private trips per destination as a PNG.
@@ -269,23 +289,27 @@ def trips_by_destination_chart(request):
 
 
 # ---------------------------------------------------------------------------
-# JSON API (public, read-only, public trips only)
+# JSON API (read-only, public trips only, sign-in required)
 # ---------------------------------------------------------------------------
+@api_login_required
 def api_ping_jsonresponse(request):
     """Health check answered with JsonResponse (Content-Type: application/json)."""
     return JsonResponse({"ok": True})
 
 
+@api_login_required
 def api_ping_httpresponse_manual_json(request):
     """Health check built by hand: json.dumps plus an explicit application/json header."""
     return HttpResponse(json.dumps({"ok": True}), content_type="application/json")
 
 
+@api_login_required
 def api_ping_httpresponse_default(request):
     """Health check with Django's default HttpResponse type (text/html; charset=utf-8)."""
     return HttpResponse('{"ok": true}')
 
 
+@api_login_required
 def api_ping_httpresponse_text(request):
     """Health check as plain text (text/plain)."""
     return HttpResponse("ok", content_type="text/plain")
@@ -310,6 +334,7 @@ def _trip_to_dict(trip):
     }
 
 
+@api_login_required
 def api_trips(request):
     """
     GET /api/trips/ — public trips as JSON.
@@ -352,6 +377,7 @@ def api_trips(request):
     return JsonResponse({"count": len(data), "results": data})
 
 
+@method_decorator(api_login_required, name="dispatch")
 class DestinationsAPI(View):
     """GET /api/destinations/?country=Italy&q=rom — destinations with their public trip counts."""
 
@@ -379,6 +405,7 @@ class DestinationsAPI(View):
         return JsonResponse({"count": len(data), "results": data})
 
 
+@api_login_required
 def api_popular_destinations(request):
     """GET /api/destinations/popular/ — parallel label and count arrays."""
     rows = destination_popularity()

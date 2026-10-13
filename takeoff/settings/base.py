@@ -71,6 +71,14 @@ STATIC_ROOT = BASE_DIR / 'takeoff' / 'ui-ux' / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Authentication
+# Pages and APIs marked with @login_required (or LoginRequiredMixin) send visitors who are not
+# signed in to LOGIN_URL. After signing in they land on LOGIN_REDIRECT_URL (or the page they were
+# trying to open, via ?next=), and after signing out on LOGOUT_REDIRECT_URL.
+LOGIN_URL = 'trips:login'
+LOGIN_REDIRECT_URL = 'trips:home'
+LOGOUT_REDIRECT_URL = 'trips:home'
+
 # Cross-origin access
 # The JSON feeds under /api/ are public and read-only. Allowing the Vega editor's origin lets anyone
 # chart them at https://vega.github.io/editor/ without a proxy.

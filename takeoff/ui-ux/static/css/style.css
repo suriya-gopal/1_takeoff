@@ -97,14 +97,14 @@ a.trip-card:hover { box-shadow: 0 6px 18px rgba(11, 47, 107, .12); transform: tr
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; margin: .8rem 0; }
 .panel h3 { margin-top: 0; }
 label { display: block; font-weight: 600; font-size: .88rem; margin: .6rem 0 .2rem; color: var(--navy); }
-input[type="text"], input[type="search"], input[type="number"], input[type="date"], select, textarea {
+input[type="text"], input[type="search"], input[type="number"], input[type="date"], input[type="email"], input[type="password"], select, textarea {
   width: 100%; padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 8px;
   font: inherit; background: #fff; color: var(--text);
 }
 /* normalize.css makes type="search" inputs content-box, which makes them wider than their
    column. Force border-box on every field and give single-line fields one common height. */
-input[type="search"], input[type="text"], input[type="number"], input[type="date"], select, textarea { box-sizing: border-box; }
-input[type="search"], input[type="text"], input[type="number"], input[type="date"], select { height: 2.75rem; }
+input[type="search"], input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="password"], select, textarea { box-sizing: border-box; }
+input[type="search"], input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="password"], select { height: 2.75rem; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--sky); outline-offset: 1px; }
 .form-row { display: grid; grid-template-columns: 1fr; gap: 0 .8rem; }
 .helptext, .help { color: var(--muted); font-size: .8rem; }
@@ -200,3 +200,19 @@ footer.site-footer { text-align: left; padding: 2rem 1rem 1rem; }
   .report-grid { grid-template-columns: 1fr 1fr; }
   .report-grid section:first-child { grid-column: 1 / -1; }
 }
+
+
+/* ---------- Accounts: login, signup and the signed-in navigation ---------- */
+.auth-card { max-width: 440px; margin: 1.5rem auto; padding: 1.4rem 1.5rem; }
+.auth-card h2.section-title { margin-top: 0; }
+.auth-card input[type="text"], .auth-card input[type="email"], .auth-card input[type="password"] { width: 100%; }
+.auth-submit { width: 100%; padding: .7rem 1rem; font-size: 1rem; }
+.auth-switch { text-align: center; margin-top: 1rem; }
+.auth-note { background: #eaf2fc; border-left: 4px solid var(--sky); padding: .5rem .8rem; border-radius: 6px; font-size: .9rem; }
+.auth-error .errorlist { background: #fdecec; border-radius: 6px; padding: .5rem .8rem; }
+nav.subnav .nav-user { align-self: center; color: var(--muted); font-size: .85rem; padding: 0 .4rem; }
+nav.subnav .nav-logout { display: inline; margin: 0; }
+nav.subnav .nav-logout button { background: transparent; color: var(--navy); border: 1px solid var(--border); padding: .3rem .8rem; border-radius: 999px; font-size: .85rem; font-weight: 600; }
+nav.subnav .nav-logout button:hover { background: var(--navy); color: #fff; }
+nav.subnav a.nav-auth { margin-left: auto; }
+nav.subnav a.nav-auth + a.cta { margin-left: 0; }

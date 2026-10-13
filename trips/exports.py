@@ -2,6 +2,7 @@
 
 import csv
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_safe
@@ -53,6 +54,7 @@ def _stamp():
     return timezone.localtime().strftime("%Y-%m-%d_%H-%M")
 
 
+@login_required
 @require_safe
 def export_trips_csv(request):
     """GET /export/trips.csv — public trips as a spreadsheet, named trips_YYYY-MM-DD_HH-MM.csv."""
@@ -70,6 +72,7 @@ def export_trips_csv(request):
     return response
 
 
+@login_required
 @require_safe
 def export_trips_json(request):
     """GET /export/trips.json — the same trips as formatted JSON with generation metadata."""

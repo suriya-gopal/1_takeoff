@@ -24,3 +24,21 @@ def make_trip(owner, destination, title="Italy loop", start=date(2026, 5, 1), ni
     )
     TripStop.objects.create(trip=trip, destination=destination, position=1, nights=nights)
     return trip
+
+
+class SignedInMixin:
+    """
+    Test-case mixin: every test starts with the test client signed in.
+
+    Most pages and APIs require login, so tests that are about what a page shows (rather than about
+    who may see it) sign in first. Set `signed_in_as` to a username to choose the account.
+    """
+
+    signed_in_as = "viewer"
+
+    def setUp(self):
+        super().setUp()
+        user = User.objects.filter(username=self.signed_in_as).first()
+        if user is None:
+            user = User.objects.create_user(self.signed_in_as, f"{self.signed_in_as}@illinois.edu", "pw")
+        self.client.force_login(user)

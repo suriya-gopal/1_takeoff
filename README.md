@@ -30,6 +30,8 @@ optionally post the trip publicly so other travelers can ask to join.
 - **Insights** — interactive Vega-Lite charts fed by JSON endpoints.
 - **Trip budget in local currency** — live exchange rates for any public trip.
 - **Reports and exports** — community totals plus CSV and JSON downloads.
+- **Accounts** — sign up, log in and log out with a username and password;
+  private pages and APIs need a signed-in user.
 - **Django admin** — full CRUD over every model out of the box.
 
 ---
@@ -219,12 +221,16 @@ so spreadsheets don't run them as formulas.
   three ordered stops and a "looking for travel companions" checkbox. Ticking it
   posts the trip publicly. Includes `{% csrf_token %}` and friendly validation errors.
 - **Request to join** (on each open public trip page): creates a join request.
-- There is no login yet, so both forms ask who is acting from a dropdown.
+- Both forms act as the signed-in user: a new trip is owned by them, and a join
+  request is sent from them, so neither form asks "who are you?".
 
 ## JSON API
 
 Read-only, and only **public** trips are ever returned. Filters go in the
-query string; a bad filter value returns a JSON `400` error.
+query string; a bad filter value returns a JSON `400` error. Every endpoint
+needs a signed-in user: without one it answers `401` with
+`{"error": "...", "login_url": "/login/"}` instead of an HTML redirect, so
+scripts get a clear JSON answer.
 
 | Endpoint | View | Filters |
 |---|---|---|
@@ -255,6 +261,38 @@ labelled `text/html; charset=utf-8`, so clients would treat the JSON as a web
 page; `HttpResponse(..., content_type="application/json")` fixes that by hand;
 and `content_type="text/plain"` is read as plain text. `JsonResponse` is the
 right tool for an API because it serialises the data and sets the header.
+
+---
+
+## Authentication
+
+| URL | View | Notes |
+|---|---|---|
+| `/login/` | `accounts.TakeOffLoginView` (Django `LoginView`) | custom template `templates/accounts/login.html` |
+| `/signup/` | `accounts.SignUpView` | `SignUpForm` (username, email, password twice); signs the new user in |
+| `/logout/` | Django `LogoutView` | POST only (the nav has a small form with `{% csrf_token %}`) |
+
+Settings (`takeoff/settings/base.py`):
+
+```python
+LOGIN_URL = 'trips:login'            # where @login_required sends visitors
+LOGIN_REDIRECT_URL = 'trips:home'    # after login (unless ?next= says otherwise)
+LOGOUT_REDIRECT_URL = 'trips:home'   # after logout
+```
+
+**What is protected.** Public: home, Community trips (`/trips/generic/`),
+the quick feed, login and signup. Everything else needs a login: pages use
+`@login_required` / `LoginRequiredMixin` (redirect to `/login/?next=…`),
+APIs use `trips.access.api_login_required` (JSON `401`).
+
+**Navigation.** `base.html` checks `user.is_authenticated`: before login the
+nav shows only Home, Community, Log in and Sign up; after login it shows All
+trips, Search, Insights, Reports, Plan a trip, the username and Log out.
+
+**Profiles.** `Traveler.for_user(user)` creates the travel profile the first
+time an account is used, so every account (signup, admin-made, or any later
+login method) gets one. A `.edu` email earns the verified tick. Private trips
+are visible only to their owner (others get a 404).
 
 ---
 

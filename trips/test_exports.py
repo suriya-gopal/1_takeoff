@@ -9,11 +9,11 @@ from datetime import date
 from django.test import TestCase
 from django.urls import reverse
 
-from .factories import make_destination, make_traveler, make_trip
+from .factories import SignedInMixin, make_destination, make_traveler, make_trip
 from .models import Trip
 
 
-class ExportTests(TestCase):
+class ExportTests(SignedInMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         owner = make_traveler()

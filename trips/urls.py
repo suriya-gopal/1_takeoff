@@ -1,13 +1,19 @@
 """URL routes owned by the trips app."""
 
+from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from . import budget, charts, exports, reports, views
+from . import accounts, budget, charts, exports, reports, views
 
 app_name = "trips"
 
 urlpatterns = [
     path("", views.home, name="home"),
+
+    # Accounts: username/password login, signup and logout (logout accepts POST only)
+    path("login/", accounts.TakeOffLoginView.as_view(), name="login"),
+    path("signup/", accounts.SignUpView.as_view(), name="signup"),
+    path("logout/", LogoutView.as_view(), name="logout"),
 
     # Trip pages
     path("trips/manual/", views.trip_manual_view, name="trip-manual"),

@@ -5,11 +5,11 @@ from datetime import date
 from django.test import TestCase
 from django.urls import reverse
 
-from .factories import make_destination, make_traveler, make_trip
+from .factories import SignedInMixin, make_destination, make_traveler, make_trip
 from .models import Trip
 
 
-class ChartFeedTests(TestCase):
+class ChartFeedTests(SignedInMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         owner = make_traveler()
@@ -38,7 +38,7 @@ class ChartFeedTests(TestCase):
         self.assertEqual(self.client.get(reverse("trips:api-insights-departures")).json(), [])
 
 
-class ChartDefinitionTests(TestCase):
+class ChartDefinitionTests(SignedInMixin, TestCase):
     def test_bar_chart_reads_its_feed_by_url(self):
         spec = self.client.get(reverse("trips:chart-spec-destinations")).json()
         self.assertEqual(spec["data"], {"url": reverse("trips:api-insights-destinations")})
@@ -64,7 +64,7 @@ class CrossOriginTests(TestCase):
         self.assertNotIn("Access-Control-Allow-Origin", page)
 
 
-class InsightsPageTests(TestCase):
+class InsightsPageTests(SignedInMixin, TestCase):
     def test_page_embeds_both_charts_with_a_text_fallback(self):
         response = self.client.get(reverse("trips:insights"))
         self.assertContains(response, reverse("trips:chart-spec-destinations"))

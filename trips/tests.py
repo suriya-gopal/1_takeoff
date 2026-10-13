@@ -12,6 +12,7 @@ from django.db.utils import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from .factories import SignedInMixin
 from .models import Destination, ItineraryItem, JoinRequest, Traveler, Trip, TripStop
 
 
@@ -74,8 +75,13 @@ class TripModelConstraintTests(TestCase):
             JoinRequest.objects.create(trip=self.trip, requester=bob)
 
 
-class TripDataTestCase(TestCase):
-    """Small shared data set: one public planned trip, one private draft, one completed."""
+class TripDataTestCase(SignedInMixin, TestCase):
+    """
+    Small shared data set: one public planned trip, one private draft, one completed, all owned by
+    Alice. Tests run signed in as Bob, a traveler who owns none of them.
+    """
+
+    signed_in_as = "bob"
 
     @classmethod
     def setUpTestData(cls):
@@ -169,7 +175,7 @@ class ChartTests(TripDataTestCase):
 
 class FormTests(TripDataTestCase):
     def valid_trip_data(self, **over):
-        data = {"owner": self.bob.pk, "title": "Roman weekend", "start_date": "2026-11-01", "end_date": "2026-11-08",
+        data = {"title": "Roman weekend", "start_date": "2026-11-01", "end_date": "2026-11-08",
                 "budget_min_usd": "800", "budget_max_usd": "1200", "group_size": "2", "seats_open": "2",
                 "stop_1": self.rome.pk, "stop_2": self.lisbon.pk, "looking_for_companions": "on"}
         data.update(over)
@@ -179,6 +185,7 @@ class FormTests(TripDataTestCase):
         resp = self.client.post(reverse("trips:trip-create"), self.valid_trip_data())
         trip = Trip.objects.get(title="Roman weekend")
         self.assertRedirects(resp, trip.get_absolute_url())
+        self.assertEqual(trip.owner, self.bob)   # owner is the signed-in traveler, not a form field
         self.assertEqual(trip.visibility, Trip.PUBLIC)
         self.assertEqual([s.destination.name for s in trip.stops.all()], ["Rome", "Lisbon"])
         self.assertEqual(sum(s.nights for s in trip.stops.all()), 7)
@@ -196,21 +203,24 @@ class FormTests(TripDataTestCase):
 
     def test_join_request_post_creates_row_then_redirects(self):
         url = self.public.get_absolute_url()
-        resp = self.client.post(url, {"requester": self.bob.pk, "message": "Count me in"})
+        resp = self.client.post(url, {"message": "Count me in"})
         self.assertRedirects(resp, url)
         self.assertEqual(JoinRequest.objects.get(trip=self.public, requester=self.bob).message, "Count me in")
 
     def test_join_request_twice_updates_instead_of_duplicating(self):
         url = self.public.get_absolute_url()
-        self.client.post(url, {"requester": self.bob.pk, "message": "one"})
-        self.client.post(url, {"requester": self.bob.pk, "message": "two"})
+        self.client.post(url, {"message": "one"})
+        self.client.post(url, {"message": "two"})
         self.assertEqual(JoinRequest.objects.filter(trip=self.public).count(), 1)
 
     def test_owner_cannot_join_own_trip_and_private_trip_is_closed(self):
-        resp = self.client.post(self.public.get_absolute_url(), {"requester": self.alice.pk, "message": ""})
+        self.client.force_login(self.alice.user)
+        resp = self.client.post(self.public.get_absolute_url(), {"message": ""})
         self.assertEqual(resp.status_code, 400)
-        resp = self.client.post(self.private.get_absolute_url(), {"requester": self.bob.pk, "message": ""})
-        self.assertEqual(resp.status_code, 400)
+        self.client.force_login(self.bob.user)
+        # Alice's private trip does not exist as far as Bob can tell.
+        resp = self.client.post(self.private.get_absolute_url(), {"message": ""})
+        self.assertEqual(resp.status_code, 404)
         self.assertEqual(JoinRequest.objects.count(), 0)
 
 

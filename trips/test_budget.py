@@ -9,7 +9,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from . import budget
-from .factories import make_destination, make_traveler, make_trip
+from .factories import SignedInMixin, make_destination, make_traveler, make_trip
 from .models import Trip
 
 
@@ -80,7 +80,7 @@ class AssessmentTests(SimpleTestCase):
         self.assertEqual(budget.assess(Decimal("800"), Decimal("0"), Decimal("0"))["status"], "unset")
 
 
-class BudgetViewTests(TestCase):
+class BudgetViewTests(SignedInMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         owner = make_traveler()

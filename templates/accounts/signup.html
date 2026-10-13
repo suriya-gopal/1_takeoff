@@ -1,0 +1,24 @@
+{% extends "trips/base.html" %}
+{% block title %}Sign up &middot; TakeOff{% endblock %}
+{% block content %}
+  <section class="auth-card panel">
+    <h2 class="section-title">Create your account</h2>
+    <p class="meta">Post your trips, find companions and join trips other travelers have planned.</p>
+
+    <form method="post" action="{% url 'trips:signup' %}" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors }}</div>{% endif %}
+      <div>{{ form.username.label_tag }} {{ form.username }} {{ form.username.errors }}</div>
+      <div>{{ form.email.label_tag }} {{ form.email }} {{ form.email.errors }}<span class="helptext">{{ form.email.help_text }}</span></div>
+      <div>{{ form.password1.label_tag }} {{ form.password1 }} {{ form.password1.errors }}</div>
+      <div>{{ form.password2.label_tag }} {{ form.password2 }} {{ form.password2.errors }}<span class="helptext">Enter the same password again.</span></div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <p><button type="submit" class="auth-submit">Sign up</button></p>
+    </form>
+
+    {% include "accounts/_google_button.html" with google_label="Sign up with Google" %}
+
+    <p class="meta auth-switch">Already have an account?
+      <a href="{% url 'trips:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a></p>
+  </section>
+{% endblock %}

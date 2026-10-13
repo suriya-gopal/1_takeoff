@@ -14,10 +14,13 @@ import re
 from decimal import Decimal, ROUND_HALF_UP
 
 import requests
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 
+from .access import api_login_required
 from .models import Trip
+from .views import visible_trips
 
 RATES_URL = "https://api.frankfurter.dev/v1/latest"
 REQUEST_TIMEOUT_SECONDS = 5
@@ -191,6 +194,7 @@ def clean_currency(raw):
 # ---------------------------------------------------------------------------
 # Views
 # ---------------------------------------------------------------------------
+@api_login_required
 def api_trip_budget(request, pk):
     """
     GET /api/trips/<id>/budget/?currency=EUR
@@ -216,9 +220,10 @@ def api_trip_budget(request, pk):
     return JsonResponse(build_budget_report(trip, currency, rate, as_of))
 
 
+@login_required
 def trip_budget_page(request, pk):
     """Page showing a trip's budget in the currency chosen in the picker."""
-    trip = get_object_or_404(Trip, pk=pk)
+    trip = get_object_or_404(visible_trips(request.user), pk=pk)
     context = {
         "trip": trip,
         "currencies": CURRENCY_CHOICES,

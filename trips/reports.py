@@ -1,12 +1,13 @@
 """Community report: grouped summaries of public trips with links to the downloadable exports."""
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg, Count, Q, Sum
 from django.views.generic import TemplateView
 
 from .models import Destination, JoinRequest, Trip
 
 
-class ReportsView(TemplateView):
+class ReportsView(LoginRequiredMixin, TemplateView):
     """GET /reports/ — what the community has posted, summarised and ready to download."""
 
     template_name = "trips/reports.html"

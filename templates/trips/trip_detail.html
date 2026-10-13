@@ -41,7 +41,7 @@
       <form method="post" action="{{ trip.get_absolute_url }}">
         {% csrf_token %}
         {{ form.non_field_errors }}
-        <div>{{ form.requester.label_tag }} {{ form.requester }} {{ form.requester.errors }}<span class="helptext">{{ form.requester.help_text }}</span></div>
+        <p class="meta">Requesting as <strong>{{ user.username }}</strong>.</p>
         <div>{{ form.message.label_tag }} {{ form.message }} {{ form.message.errors }}</div>
         <p><button type="submit">Request to join</button></p>
       </form>

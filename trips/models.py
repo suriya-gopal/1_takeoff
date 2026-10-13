@@ -104,6 +104,26 @@ class Traveler(models.Model):
     def __str__(self):
         return f"{self.display_name}{' (verified)' if self.is_domain_verified else ''}"
 
+    # Email domains that earn the verified tick.
+    VERIFIED_SUFFIXES = (".edu",)
+
+    @classmethod
+    def for_user(cls, user):
+        """
+        The travel profile of a signed-in account, created on first use.
+
+        Every login path (username/password signup, Google, an admin-made account) ends up here, so
+        each account gets exactly one profile without a separate setup step.
+        """
+        profile, _ = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                "display_name": (user.get_full_name() or user.username)[:60],
+                "is_domain_verified": (user.email or "").lower().endswith(cls.VERIFIED_SUFFIXES),
+            },
+        )
+        return profile
+
 
 class Trip(models.Model):
     """

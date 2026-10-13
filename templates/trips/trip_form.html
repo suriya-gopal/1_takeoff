@@ -9,7 +9,7 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
 
-    <div>{{ form.owner.label_tag }} {{ form.owner }} {{ form.owner.errors }}<span class="helptext">{{ form.owner.help_text }}</span></div>
+    <p class="meta">Planning as <strong>{{ user.username }}</strong>.</p>
     <div>{{ form.title.label_tag }} {{ form.title }} {{ form.title.errors }}</div>
 
     <div class="form-row">

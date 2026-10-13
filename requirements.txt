@@ -3,3 +3,4 @@ django-environ>=0.11
 django-cors-headers>=4.4
 matplotlib>=3.9
 requests>=2.32
+django-allauth[socialaccount]>=65.0

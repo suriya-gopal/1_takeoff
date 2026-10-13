@@ -2,19 +2,21 @@
 Community insights: chart-ready JSON feeds, the Vega-Lite chart definitions and the Insights page.
 
 Feeds (public trips only, plain JSON arrays so any charting tool can read them):
-    /api/insights/destinations/   public trips per destination
-    /api/insights/departures/     public trips departing per month
+    /api/insights/destinations/   public trips per destination   PUBLIC API: no login needed
+    /api/insights/departures/     public trips departing per month   (login required)
 
 Chart definitions are served as JSON from /insights/specs/ so the page, and anyone
 experimenting in the Vega editor, always chart the live feeds.
 """
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
+from .access import api_login_required
 from .models import Destination, Trip
 from .views import destination_popularity
 
@@ -75,10 +77,21 @@ def monthly_departures():
 
 
 def api_destination_summary(request):
-    """GET /api/insights/destinations/ — one record per destination."""
+    """
+    GET /api/insights/destinations/ — one record per destination. THE PUBLIC API.
+
+    This is the one endpoint anyone may call without logging in: the Vega-Lite editor, a Python
+    script, Excel or a notebook. It is safe to publish because it only holds counts and averages
+    built from public trips: no names, emails, budgets or private trips. Each record:
+
+        {"destination": "Rome", "country": "Italy", "public_trips": 3, "avg_daily_cost_usd": 125.0}
+
+    Every other API still requires login (see trips/access.py).
+    """
     return JsonResponse(destination_summary(), safe=False)
 
 
+@api_login_required
 def api_monthly_departures(request):
     """GET /api/insights/departures/ — one record per month."""
     return JsonResponse(monthly_departures(), safe=False)
@@ -154,6 +167,7 @@ def departure_chart_spec(data_url, max_value=1):
     }
 
 
+@api_login_required
 def destination_chart_json(request):
     """GET /insights/specs/destinations.json"""
     peak = max((row["public_trips"] for row in destination_summary()), default=1)
@@ -161,6 +175,7 @@ def destination_chart_json(request):
     return JsonResponse(spec, json_dumps_params={"indent": 2})
 
 
+@api_login_required
 def departure_chart_json(request):
     """GET /insights/specs/departures.json"""
     peak = max((row["public_trips"] for row in monthly_departures()), default=1)
@@ -171,6 +186,7 @@ def departure_chart_json(request):
 # ---------------------------------------------------------------------------
 # Insights page
 # ---------------------------------------------------------------------------
+@login_required
 def insights_page(request):
     """Popular destinations and departure timing, charted from the live feeds."""
     feeds = [

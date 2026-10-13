@@ -6,15 +6,20 @@
      before you book.</p>
 
   <p>
-    <a class="button" href="{% url 'trips:trip-create' %}">Plan a trip</a>
-    <a class="button secondary" href="{% url 'trips:trip-search' %}">Search community trips</a>
+    {% if user.is_authenticated %}
+      <a class="button" href="{% url 'trips:trip-create' %}">Plan a trip</a>
+      <a class="button secondary" href="{% url 'trips:trip-search' %}">Search community trips</a>
+    {% else %}
+      <a class="button" href="{% url 'trips:signup' %}">Sign up to plan a trip</a>
+      <a class="button secondary" href="{% url 'trips:login' %}">Log in</a>
+    {% endif %}
   </p>
 
   <!-- Popular destinations: the trip counts come from a database Count(), not hard-coded numbers. -->
   <h3 class="section-title">Popular destinations</h3>
   <div class="trip-grid">
     {% for d in popular %}
-      <a class="trip-card" href="{% url 'trips:trip-search' %}?q={{ d.name|urlencode }}">
+      <a class="trip-card" href="{% if user.is_authenticated %}{% url 'trips:trip-search' %}?q={{ d.name|urlencode }}{% else %}{% url 'trips:trip-list-generic' %}{% endif %}">
         <p class="title">{{ d.name }}, {{ d.country }}</p>
         <p class="meta">{{ d.n_trips }} trip{{ d.n_trips|pluralize }} &middot; about ${{ d.avg_daily_cost_usd|floatformat:0 }}/day</p>
       </a>
@@ -42,7 +47,7 @@
   </div>
 
   <p class="meta" style="margin-top:1rem;">
-    <a href="{% url 'trips:trip-list-generic' %}">See all community trips &rarr;</a> &middot;
-    <a href="{% url 'trips:trip-list' %}">See every trip &rarr;</a>
+    <a href="{% url 'trips:trip-list-generic' %}">See all community trips &rarr;</a>
+    {% if user.is_authenticated %}&middot; <a href="{% url 'trips:trip-list' %}">See every trip &rarr;</a>{% endif %}
   </p>
 {% endblock %}

@@ -5,11 +5,11 @@ from datetime import date
 from django.test import TestCase
 from django.urls import reverse
 
-from .factories import make_destination, make_traveler, make_trip
+from .factories import SignedInMixin, make_destination, make_traveler, make_trip
 from .models import JoinRequest, Trip
 
 
-class ReportsPageTests(TestCase):
+class ReportsPageTests(SignedInMixin, TestCase):
     def test_empty_report_shows_empty_rows_and_zero_totals(self):
         response = self.client.get(reverse("trips:reports"))
         self.assertEqual(response.status_code, 200)

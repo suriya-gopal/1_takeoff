@@ -16,8 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Our own login and signup pages are the only ones: allauth's copies redirect to them.
+    path('accounts/login/', RedirectView.as_view(pattern_name='trips:login', query_string=True)),
+    path('accounts/signup/', RedirectView.as_view(pattern_name='trips:signup', query_string=True)),
+    # django-allauth: Google OAuth start (/accounts/google/login/) and callback
+    # (/accounts/google/login/callback/).
+    path('accounts/', include('allauth.urls')),
+
     path('', include('trips.urls')),   # trips app owns the site root
 ]

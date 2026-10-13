@@ -30,6 +30,8 @@ optionally post the trip publicly so other travelers can ask to join.
 - **Insights** — interactive Vega-Lite charts fed by JSON endpoints.
 - **Trip budget in local currency** — live exchange rates for any public trip.
 - **Reports and exports** — community totals plus CSV and JSON downloads.
+- **Accounts** — sign up, log in and log out with a username and password,
+  or with **Continue with Google**; private pages and APIs need a signed-in user.
 - **Django admin** — full CRUD over every model out of the box.
 
 ---
@@ -219,19 +221,27 @@ so spreadsheets don't run them as formulas.
   three ordered stops and a "looking for travel companions" checkbox. Ticking it
   posts the trip publicly. Includes `{% csrf_token %}` and friendly validation errors.
 - **Request to join** (on each open public trip page): creates a join request.
-- There is no login yet, so both forms ask who is acting from a dropdown.
+- Both forms act as the signed-in user: a new trip is owned by them, and a join
+  request is sent from them, so neither form asks "who are you?".
 
 ## JSON API
 
 Read-only, and only **public** trips are ever returned. Filters go in the
 query string; a bad filter value returns a JSON `400` error.
 
+**Public vs protected.** `/api/insights/destinations/` is the one **public**
+API: no login needed (details, the Vega-Lite chart and three example uses are
+in [`docs/public_api/`](docs/public_api/README.md)). Every other endpoint
+needs a signed-in user: without one it answers `401` with
+`{"error": "...", "login_url": "/login/"}` instead of an HTML redirect, so
+scripts get a clear JSON answer.
+
 | Endpoint | View | Filters |
 |---|---|---|
 | `/api/trips/` | function view `api_trips` | `q`, `country`, `status`, `max_budget`, `min_seats` |
 | `/api/destinations/` | class view `DestinationsAPI` | `q`, `country` |
 | `/api/destinations/popular/` | function view | — |
-| `/api/insights/destinations/` | function view | — |
+| `/api/insights/destinations/` | function view: **public, no login** | — |
 | `/api/insights/departures/` | function view | — |
 | `/api/trips/<pk>/budget/` | function view | `currency` |
 | `/api/ping/json/` | `JsonResponse` → `application/json` | — |
@@ -258,6 +268,69 @@ right tool for an API because it serialises the data and sets the header.
 
 ---
 
+## Authentication
+
+| URL | View | Notes |
+|---|---|---|
+| `/login/` | `accounts.TakeOffLoginView` (Django `LoginView`) | custom template `templates/accounts/login.html` |
+| `/signup/` | `accounts.SignUpView` | `SignUpForm` (username, email, password twice); signs the new user in |
+| `/logout/` | Django `LogoutView` | POST only (the nav has a small form with `{% csrf_token %}`) |
+
+Settings (`takeoff/settings/base.py`):
+
+```python
+LOGIN_URL = 'trips:login'            # where @login_required sends visitors
+LOGIN_REDIRECT_URL = 'trips:home'    # after login (unless ?next= says otherwise)
+LOGOUT_REDIRECT_URL = 'trips:home'   # after logout
+```
+
+**What is protected.** Public: home, Community trips (`/trips/generic/`),
+the quick feed, login and signup. Everything else needs a login: pages use
+`@login_required` / `LoginRequiredMixin` (redirect to `/login/?next=…`),
+APIs use `trips.access.api_login_required` (JSON `401`).
+
+**Navigation.** `base.html` checks `user.is_authenticated`: before login the
+nav shows only Home, Community, Log in and Sign up; after login it shows All
+trips, Search, Insights, Reports, Plan a trip, the username and Log out.
+
+**Profiles.** `Traveler.for_user(user)` creates the travel profile the first
+time an account is used, so every account (signup, admin-made, or any later
+login method) gets one. A `.edu` email earns the verified tick. Private trips
+are visible only to their owner (others get a 404).
+
+### Google sign-in (django-allauth)
+
+The login and signup pages have a **Continue with Google** button
+(`templates/accounts/_google_button.html`). It POSTs to allauth's
+`/accounts/google/login/`, Google asks the person to pick an account, and
+Google sends them back to `/accounts/google/login/callback/`. A first Google
+login creates the account and its Traveler profile (named after the Google
+account); if the Google email matches an existing account, that account is
+signed in instead, and any empty first or last name on it is filled in from
+Google (`trips/signals.py`). For safety, allauth then turns off that account's
+old password, so it signs in with Google from then on.
+
+**Google Cloud setup** (console.cloud.google.com):
+
+1. Create a project, then **APIs & Services → OAuth consent screen**: type
+   *External*, app name *TakeOff*, add your emails as test users.
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+3. **Authorised JavaScript origins**: `http://127.0.0.1:8000`,
+   `http://localhost:8000`, `https://<username>.pythonanywhere.com`.
+4. **Authorised redirect URIs**:
+   - `http://127.0.0.1:8000/accounts/google/login/callback/`
+   - `http://localhost:8000/accounts/google/login/callback/`
+   - `https://<username>.pythonanywhere.com/accounts/google/login/callback/`
+5. Copy the client ID and secret into `.env` as `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET` (locally **and** on PythonAnywhere). They are read
+   in `SOCIALACCOUNT_PROVIDERS`, so no Social App needs to be added in admin.
+
+In production, `ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'` makes allauth send
+Google the `https://` callback; without it PythonAnywhere's proxy makes it
+`http://` and Google answers `redirect_uri_mismatch`.
+
+---
+
 ## Running it
 
 ```bash
@@ -265,9 +338,9 @@ git clone git@github.com:suriya-gopal/1_takeoff.git
 cd 1_takeoff
 
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -r requirements.txt   # Django, django-environ, django-cors-headers, matplotlib, requests
+pip install -r requirements.txt   # Django, django-environ, django-cors-headers, matplotlib, requests, django-allauth
 
-cp .env.example .env    # then replace the SECRET_KEY value with any random string
+cp .env.example .env    # then set SECRET_KEY, GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
 
 python manage.py migrate
 python manage.py runserver
@@ -308,15 +381,18 @@ Production static files: `DJANGO_SETTINGS_MODULE=takeoff.settings.production pyt
    `python3 -m venv ~/.venvs/takeoff && source ~/.venvs/takeoff/bin/activate`
    and `pip install -r requirements.txt`.
 2. Create `.env` from `.env.example`: a long random `SECRET_KEY`,
-   `ALLOWED_HOSTS=<username>.pythonanywhere.com`, and
-   `CSRF_TRUSTED_ORIGINS=https://<username>.pythonanywhere.com`.
-3. `export DJANGO_SETTINGS_MODULE=takeoff.settings.production` and run
+   `ALLOWED_HOSTS=<username>.pythonanywhere.com`,
+   `CSRF_TRUSTED_ORIGINS=https://<username>.pythonanywhere.com`,
+   `HTTPS_ONLY=True`, and the Google `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+3. `export DJANGO_SETTINGS_MODULE=takeoff.settings.production`, then run
+   `python manage.py migrate` (creates allauth's tables) and
    `python manage.py collectstatic --noinput`.
 4. Web tab: set the virtualenv path, and add a static mapping
    `/static/` → `<repo>/takeoff/ui-ux/staticfiles`.
 5. In the WSGI file, point the path at the repository and keep
    `DJANGO_SETTINGS_MODULE = takeoff.settings.production` (the default in `takeoff/wsgi.py`).
 6. Click **Reload**. `db.sqlite3` is committed, so the seeded data appears right away.
+7. Use the site on `https://` (Web tab → *Force HTTPS* on), so the Google callback matches.
 
 Free accounts can only call allowlisted hosts from the server; Frankfurter is
 on that list. Set `HTTPS_ONLY=True` in `.env` to mark cookies secure.

@@ -5,11 +5,11 @@ from datetime import date
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .factories import make_destination, make_traveler, make_trip
+from .factories import SignedInMixin, make_destination, make_traveler, make_trip
 from .models import Trip
 
 
-class SiteRouteTests(TestCase):
+class SiteRouteTests(SignedInMixin, TestCase):
     @classmethod
     def setUpTestData(cls):
         trip = make_trip(make_traveler(), make_destination(), "Italy loop", date(2026, 5, 1),

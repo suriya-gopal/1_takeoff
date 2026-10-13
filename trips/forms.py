@@ -4,6 +4,7 @@ Forms for user input.
 * TripForm        -> the "Plan your trip" form (dates, budget range, group size,
                      "Looking for travel companions?" checkbox, ordered stops).
 * JoinRequestForm -> the "Request to join" form on a trip page.
+* SignUpForm      -> the "Create an account" form (username, email, password twice).
 
 Both are ModelForms: Django builds the fields from the model, validates them, and
 form.save() writes the row. Extra checks in clean() turn database constraint
@@ -11,6 +12,8 @@ failures into friendly form errors instead of a 500 error page.
 """
 
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.db import transaction
 
 from .models import Destination, JoinRequest, Trip, TripStop
@@ -34,8 +37,9 @@ class TripForm(forms.ModelForm):
 
     class Meta:
         model = Trip
+        # No "owner" field: the trip always belongs to the signed-in traveler (set in the view).
         fields = [
-            "owner", "title", "start_date", "end_date",
+            "title", "start_date", "end_date",
             "budget_min_usd", "budget_max_usd", "group_size", "seats_open",
         ]
         labels = {
@@ -47,9 +51,6 @@ class TripForm(forms.ModelForm):
             # type="date" gives the browser's date picker instead of a text box.
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
-        }
-        help_texts = {
-            "owner": "Choose who is planning this trip.",
         }
 
     def clean_title(self):
@@ -98,36 +99,57 @@ class TripForm(forms.ModelForm):
 
 
 class JoinRequestForm(forms.ModelForm):
-    """'Request to join' form. The trip comes from the URL, not the form."""
+    """
+    'Request to join' form. The trip comes from the URL and the requester is the signed-in
+    traveler, so the only thing the form asks for is the message.
+    """
 
     class Meta:
         model = JoinRequest
-        fields = ["requester", "message"]
-        labels = {"requester": "Requesting as"}
-        help_texts = {"requester": "Choose who is asking."}
+        fields = ["message"]
         widgets = {"message": forms.Textarea(attrs={"rows": 3, "placeholder": "Say hi — no personal details until the owner accepts."})}
 
-    def __init__(self, *args, trip=None, **kwargs):
+    def __init__(self, *args, trip=None, requester=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.trip = trip
+        self.requester = requester
 
     def clean(self):
         cleaned = super().clean()
-        requester = cleaned.get("requester")
+        requester = self.requester
         if self.trip is not None:
             if self.trip.visibility != Trip.PUBLIC or self.trip.status != Trip.PLANNED:
                 raise forms.ValidationError("This trip is not open to join requests.")
             if self.trip.seats_open < 1:
                 raise forms.ValidationError("No seats left on this trip.")
             if requester and requester == self.trip.owner:
-                self.add_error("requester", "You cannot request to join your own trip.")
+                raise forms.ValidationError("You cannot request to join your own trip.")
         return cleaned
 
     def save(self, commit=True):
         # Model rule: one request per person per trip, "re-asking edits the existing row".
         req, _ = JoinRequest.objects.update_or_create(
             trip=self.trip,
-            requester=self.cleaned_data["requester"],
+            requester=self.requester,
             defaults={"message": self.cleaned_data["message"], "status": JoinRequest.PENDING},
         )
         return req
+
+
+class SignUpForm(UserCreationForm):
+    """Create an account with a username, an email address and a password (typed twice)."""
+
+    email = forms.EmailField(
+        required=True,
+        help_text="Use your university email (.edu) to get the verified tick on your trips.",
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "email")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists. Try logging in instead.")
+        return email

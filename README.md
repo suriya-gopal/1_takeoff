@@ -227,7 +227,11 @@ so spreadsheets don't run them as formulas.
 ## JSON API
 
 Read-only, and only **public** trips are ever returned. Filters go in the
-query string; a bad filter value returns a JSON `400` error. Every endpoint
+query string; a bad filter value returns a JSON `400` error.
+
+**Public vs protected.** `/api/insights/destinations/` is the one **public**
+API: no login needed (details, the Vega-Lite chart and three example uses are
+in [`docs/public_api/`](docs/public_api/README.md)). Every other endpoint
 needs a signed-in user: without one it answers `401` with
 `{"error": "...", "login_url": "/login/"}` instead of an HTML redirect, so
 scripts get a clear JSON answer.
@@ -237,7 +241,7 @@ scripts get a clear JSON answer.
 | `/api/trips/` | function view `api_trips` | `q`, `country`, `status`, `max_budget`, `min_seats` |
 | `/api/destinations/` | class view `DestinationsAPI` | `q`, `country` |
 | `/api/destinations/popular/` | function view | — |
-| `/api/insights/destinations/` | function view | — |
+| `/api/insights/destinations/` | function view: **public, no login** | — |
 | `/api/insights/departures/` | function view | — |
 | `/api/trips/<pk>/budget/` | function view | `currency` |
 | `/api/ping/json/` | `JsonResponse` → `application/json` | — |
@@ -302,7 +306,9 @@ The login and signup pages have a **Continue with Google** button
 Google sends them back to `/accounts/google/login/callback/`. A first Google
 login creates the account and its Traveler profile (named after the Google
 account); if the Google email matches an existing account, that account is
-signed in instead.
+signed in instead, and any empty first or last name on it is filled in from
+Google (`trips/signals.py`). For safety, allauth then turns off that account's
+old password, so it signs in with Google from then on.
 
 **Google Cloud setup** (console.cloud.google.com):
 

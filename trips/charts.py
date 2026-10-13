@@ -2,8 +2,8 @@
 Community insights: chart-ready JSON feeds, the Vega-Lite chart definitions and the Insights page.
 
 Feeds (public trips only, plain JSON arrays so any charting tool can read them):
-    /api/insights/destinations/   public trips per destination
-    /api/insights/departures/     public trips departing per month
+    /api/insights/destinations/   public trips per destination   PUBLIC API: no login needed
+    /api/insights/departures/     public trips departing per month   (login required)
 
 Chart definitions are served as JSON from /insights/specs/ so the page, and anyone
 experimenting in the Vega editor, always chart the live feeds.
@@ -76,9 +76,18 @@ def monthly_departures():
     return series
 
 
-@api_login_required
 def api_destination_summary(request):
-    """GET /api/insights/destinations/ — one record per destination."""
+    """
+    GET /api/insights/destinations/ — one record per destination. THE PUBLIC API.
+
+    This is the one endpoint anyone may call without logging in: the Vega-Lite editor, a Python
+    script, Excel or a notebook. It is safe to publish because it only holds counts and averages
+    built from public trips: no names, emails, budgets or private trips. Each record:
+
+        {"destination": "Rome", "country": "Italy", "public_trips": 3, "avg_daily_cost_usd": 125.0}
+
+    Every other API still requires login (see trips/access.py).
+    """
     return JsonResponse(destination_summary(), safe=False)
 
 

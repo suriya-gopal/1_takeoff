@@ -13,6 +13,7 @@ PROTECTED_PAGES = [
     "trip-list", "trip-search", "trip-create", "insights", "reports",
     "export-trips-csv", "export-trips-json", "chart-trips-by-destination",
 ]
+PUBLIC_API = "api-insights-destinations"   # the one API anyone may call
 PROTECTED_APIS = [
     "api-trips", "api-destinations", "api-destinations-popular", "api-insights-departures",
     "api-ping-json", "api-ping-http-manual-json", "api-ping-http-default", "api-ping-http-text",
@@ -172,3 +173,41 @@ class ProtectionTests(TestCase):
         trip = Trip.objects.get(title="First trip")
         self.assertRedirects(resp, trip.get_absolute_url())
         self.assertEqual(trip.owner.user, user)
+
+
+class PublicApiTests(TestCase):
+    """/api/insights/destinations/ is the single public API; it serves clean JSON from the database."""
+
+    @classmethod
+    def setUpTestData(cls):
+        owner = make_traveler("alice")
+        rome, lisbon = make_destination("Rome", "Italy", "125.00"), make_destination("Lisbon", "Portugal", "95.00")
+        make_trip(owner, rome, "Italy loop", date(2026, 5, 1), visibility=Trip.PUBLIC)
+        make_trip(owner, rome, "Rome again", date(2026, 6, 1), visibility=Trip.PUBLIC)
+        make_trip(owner, lisbon, "Secret Lisbon", date(2026, 7, 1), visibility=Trip.PRIVATE)
+
+    def test_public_api_needs_no_login_and_returns_clean_json(self):
+        resp = self.client.get(reverse(f"trips:{PUBLIC_API}"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/json")
+        self.assertEqual(resp.json(), [
+            {"destination": "Rome", "country": "Italy", "public_trips": 2, "avg_daily_cost_usd": 125.0},
+        ])   # Lisbon's only trip is private, so it is not published
+
+    def test_public_api_reflects_the_database(self):
+        Trip.objects.filter(title="Rome again").delete()
+        self.assertEqual(self.client.get(reverse(f"trips:{PUBLIC_API}")).json()[0]["public_trips"], 1)
+
+    def test_public_api_exposes_no_personal_data(self):
+        body = self.client.get(reverse(f"trips:{PUBLIC_API}")).content.decode()
+        for secret in ("alice", "@illinois.edu", "Secret Lisbon", "budget"):
+            self.assertNotIn(secret, body)
+
+    def test_vega_editor_may_read_the_public_api(self):
+        resp = self.client.get(reverse(f"trips:{PUBLIC_API}"), HTTP_ORIGIN="https://vega.github.io")
+        self.assertEqual(resp["Access-Control-Allow-Origin"], "https://vega.github.io")
+
+    def test_every_other_api_stays_protected(self):
+        for name in PROTECTED_APIS:
+            with self.subTest(api=name):
+                self.assertEqual(self.client.get(reverse(f"trips:{name}")).status_code, 401)

@@ -18,6 +18,12 @@ HTTPS_ONLY = env.bool('HTTPS_ONLY', default=False)
 SESSION_COOKIE_SECURE = HTTPS_ONLY
 CSRF_COOKIE_SECURE = HTTPS_ONLY
 
+# Google OAuth in production. PythonAnywhere serves the site over HTTPS through a proxy, so Django
+# itself sees plain HTTP. Without these two lines allauth would send Google an http:// callback URL,
+# which does not match the https:// redirect URI registered in Google Cloud (redirect_uri_mismatch).
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = env('OAUTH_PROTOCOL', default='https')
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Hashed file names (style.css -> style.<hash>.css) let browsers cache assets safely: a changed file
 # gets a new URL. Requires `collectstatic` to have run.
 STORAGES = {

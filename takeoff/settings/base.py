@@ -16,6 +16,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    # django-allauth: "Continue with Google" (OAuth 2.0)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'trips',
 ]
 
@@ -28,6 +33,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'takeoff.urls'
@@ -78,6 +84,36 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'trips:login'
 LOGIN_REDIRECT_URL = 'trips:home'
 LOGOUT_REDIRECT_URL = 'trips:home'
+
+# Two ways to sign in: Django's username/password check, and allauth for Google accounts.
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Google OAuth (django-allauth)
+# The client ID and secret come from Google Cloud Console -> APIs & Services -> Credentials and
+# live in .env, never in git. Authorised redirect URIs to register there:
+#   http://127.0.0.1:8000/accounts/google/login/callback/
+#   http://localhost:8000/accounts/google/login/callback/
+#   https://<username>.pythonanywhere.com/accounts/google/login/callback/
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': env('GOOGLE_CLIENT_ID', default=''),
+            'secret': env('GOOGLE_CLIENT_SECRET', default=''),
+            'key': '',
+        },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online', 'prompt': 'select_account'},
+    }
+}
+SOCIALACCOUNT_AUTO_SIGNUP = True            # first Google login creates the account, no extra form
+SOCIALACCOUNT_LOGIN_ON_GET = False          # the Google button POSTs (with a CSRF token)
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True   # a Google login whose verified email matches an
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True  # existing account signs into that account
+ACCOUNT_EMAIL_VERIFICATION = 'none'         # Google has already verified the address
+ACCOUNT_LOGOUT_REDIRECT_URL = LOGOUT_REDIRECT_URL
 
 # Cross-origin access
 # The JSON feeds under /api/ are public and read-only. Allowing the Vega editor's origin lets anyone

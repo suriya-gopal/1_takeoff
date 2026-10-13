@@ -216,3 +216,12 @@ nav.subnav .nav-logout button { background: transparent; color: var(--navy); bor
 nav.subnav .nav-logout button:hover { background: var(--navy); color: #fff; }
 nav.subnav a.nav-auth { margin-left: auto; }
 nav.subnav a.nav-auth + a.cta { margin-left: 0; }
+
+/* ---------- "Continue with Google" ---------- */
+.oauth-divider { display: flex; align-items: center; gap: .75rem; color: var(--muted); font-size: .85rem; margin: .4rem 0 .9rem; }
+.oauth-divider::before, .oauth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+.oauth-form { margin: 0; }
+.google-button { width: 100%; display: flex; align-items: center; justify-content: center; gap: .6rem;
+  background: #fff; color: #1f1f1f; border: 1px solid #747775; border-radius: 999px; padding: .65rem 1rem;
+  font-weight: 600; font-size: .95rem; }
+.google-button:hover { background: #f2f6fc; color: #1f1f1f; }

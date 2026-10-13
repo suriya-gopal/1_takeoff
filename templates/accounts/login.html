@@ -18,6 +18,8 @@
       <p><button type="submit" class="auth-submit">Log in</button></p>
     </form>
 
+    {% include "accounts/_google_button.html" %}
+
     <p class="meta auth-switch">New to TakeOff?
       <a href="{% url 'trips:signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
   </section>

@@ -25,3 +25,12 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+
+# AI model weights and caches: never commit (A6)
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.onnx
+.cache/

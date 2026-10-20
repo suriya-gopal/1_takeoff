@@ -229,3 +229,5 @@ nav.subnav a.nav-auth + a.cta { margin-left: 0; }
 /* Day-by-day plan */
 .slot { margin: .3rem 0; font-size: .92rem; }
 .form-error { color: #b3261e; background: #fdecea; border: 1px solid #f5c2bd; border-radius: var(--radius); padding: .6rem .8rem; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: .35rem 0; border-bottom: 1px solid var(--border); }

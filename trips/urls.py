@@ -26,6 +26,8 @@ urlpatterns = [
     # Search and plan-a-trip form
     path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
     path("trips/<int:pk>/days/", ai_views.day_plan, name="day-plan"),
+    path("trips/<int:pk>/places/", ai_views.place_suggestions, name="place-suggestions"),
+    path("trips/<int:pk>/packing/", ai_views.packing_list, name="packing-list"),
     path("trips/new/", views.TripCreateView.as_view(), name="trip-create"),
 
     # Insights: charts, their definitions and the chart image

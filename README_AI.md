@@ -51,6 +51,42 @@ Before anything reaches the model the server:
 Known limit: a small model can invent plausible place names. Drafts are suggestions for the member to check,
 not bookings.
 
+## Hosted assistant: place suggestions, packing list and place check
+
+A second AI service, called over the internet, adds three features. It is optional: with no key set, these
+pages say they are not set up and everything else works.
+
+- **Find places** (`/trips/<id>/places/`, owner only): six ideas for things to do or eat in one city of the trip, with a
+  reason, a typical cost, a "hidden gem" flag and tags. Filter to free or hidden-gem places, then **+ Add** puts one on
+  the itinerary at the start of that city's stay with no time set, ready to schedule later.
+- **Packing list** (`/trips/<id>/packing/`): a checklist built from the route, dates, typical weather for that time of
+  year and the planned items. Identical requests are reused for six hours.
+- **Place check on drafts**: after the on-device model writes a draft, the hosted service reads it once per city and
+  says which places are real. Real places stay, a made-up one is replaced when a real alternative is offered, and
+  anything unconfirmed is marked. If the service is unavailable the draft still appears, labelled as unchecked.
+
+**Data input:** city names, nights, dates, budget and group size come from the trip; the member adds only the short
+interests text. Titles of items already on the itinerary are included in the packing request.
+
+**Preprocessing:** the same cleaning as above, plus item titles are cleaned and any that look like instructions to the
+model are left out. Requests ask for strict JSON in a fixed shape.
+
+**Safety Guardrails:** interests are screened before any call; only the trip's owner can ask for suggestions; the
+city must be one of the trip's own stops; every reply is parsed and checked (unusable entries are dropped, text is
+trimmed, costs are bounded); suggestions wait in the member's session until they press **+ Add**; there is a request
+timeout, two attempts per call, and a per-member hourly limit (`AI_API_REQUESTS_PER_HOUR`). Suggestions can still be
+wrong, and the pages say so.
+
+| Setting (in `.env`) | Default | Meaning |
+|---|---|---|
+| `AI_API_KEY` | empty | Key from your provider. Leave empty to switch the hosted features off. Never commit it |
+| `AI_API_MODEL` | empty | Model name as the provider lists it |
+| `AI_API_BASE_URL` | empty (OpenAI) | Endpoint of any provider with an OpenAI-compatible API |
+| `AI_API_TIMEOUT_SECONDS` | `30` | Longest wait for one call |
+| `AI_API_REQUESTS_PER_HOUR` | `30` | Hosted requests per member per hour |
+
+Cost, scaling and when to prefer which service are discussed in `notes.txt`.
+
 ## Running it
 
 ```bash

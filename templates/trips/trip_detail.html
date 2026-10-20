@@ -34,8 +34,10 @@
     <p class="empty-note">No itinerary items yet.</p>
   {% endfor %}
   {% if is_owner %}
-    <p><a class="button secondary" href="{% url 'trips:day-plan' trip.pk %}">Draft my days</a></p>
+    <p><a class="button secondary" href="{% url 'trips:day-plan' trip.pk %}">Draft my days</a>
+       <a class="button secondary" href="{% url 'trips:place-suggestions' trip.pk %}">Find places</a></p>
   {% endif %}
+  <p><a class="button secondary" href="{% url 'trips:packing-list' trip.pk %}">Packing list</a></p>
 
   <h3 class="section-title">Join requests</h3>
   <div class="trip-grid">

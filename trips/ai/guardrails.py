@@ -74,8 +74,60 @@ def validate_days(data, expected_days):
     return result
 
 
-def allow_request(user_id, limit):
-    """Count one draft for this member; False once they pass `limit` within the hour."""
-    key = f"ai-drafts-{user_id}"
+def allow_request(user_id, limit, scope="drafts"):
+    """Count one request in `scope` for this member; False once they pass `limit` within the hour."""
+    key = f"ai-{scope}-{user_id}"
     cache.add(key, 0, timeout=3600)
     return cache.incr(key) <= limit
+
+
+def safe_title(value):
+    """An item title that is fit to put in a prompt, or '' when it looks like an attempt to steer the model."""
+    text = clean_text(value, MAX_ITEM_LENGTH)
+    return "" if any(phrase in text.lower() for phrase in BLOCKED_PHRASES) else text
+
+
+def _text(value, limit):
+    return clean_text(value, limit) if isinstance(value, str) else ""
+
+
+def validate_places(data, limit=8):
+    """Place suggestions: a list of {name, why, cost, free, hidden_gem, tags}; unusable entries are dropped."""
+    entries = data.get("places") if isinstance(data, dict) else None
+    places = []
+    for entry in entries if isinstance(entries, list) else []:
+        if not isinstance(entry, dict):
+            continue
+        name, why = _text(entry.get("name"), MAX_ITEM_LENGTH), _text(entry.get("why"), 160)
+        try:
+            cost = max(0, min(float(entry.get("cost_usd", 0)), 10000))
+        except (TypeError, ValueError):
+            cost = 0
+        tags = [t for t in (_text(t, 20) for t in entry.get("tags", []) if isinstance(t, str)) if t][:4]
+        if name and why:
+            places.append({
+                "name": name, "why": why, "cost_usd": round(cost, 2), "free": cost == 0 or entry.get("free") is True,
+                "hidden_gem": entry.get("hidden_gem") is True, "tags": tags,
+            })
+    return places[:limit] or None
+
+
+def validate_packing(data, limit=14):
+    """Packing list: a list of {item, reason}."""
+    entries = data.get("items") if isinstance(data, dict) else None
+    items = []
+    for entry in entries if isinstance(entries, list) else []:
+        if isinstance(entry, dict) and _text(entry.get("item"), 60) and _text(entry.get("reason"), 120):
+            items.append({"item": _text(entry["item"], 60), "reason": _text(entry["reason"], 120)})
+    return items[:limit] or None
+
+
+def validate_checks(data):
+    """Place checks: {(day_index, slot): {"real": bool, "fix": str}} keyed from 1-based day numbers."""
+    entries = data.get("checks") if isinstance(data, dict) else None
+    result = {}
+    for entry in entries if isinstance(entries, list) else []:
+        if not isinstance(entry, dict) or entry.get("slot") not in SLOTS or not isinstance(entry.get("day"), int):
+            continue
+        result[(entry["day"] - 1, entry["slot"])] = {"real": entry.get("real") is True, "fix": _text(entry.get("fix"), MAX_ITEM_LENGTH)}
+    return result

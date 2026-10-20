@@ -19,6 +19,11 @@
 
   {% if plan %}
     <h3 class="section-title">Suggested days</h3>
+    {% if place_check == "checked" %}
+      <p class="meta">Places were double-checked. Anything changed or unconfirmed is marked.</p>
+    {% elif place_check == "unchecked" %}
+      <p class="meta">The place check could not run, so please verify the places yourself before booking.</p>
+    {% endif %}
     {% for stop in plan %}
       <h4>{{ stop.city }}</h4>
       <div class="trip-grid">

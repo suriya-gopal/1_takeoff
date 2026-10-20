@@ -133,3 +133,12 @@ AI_LOCAL_MODEL = env('AI_LOCAL_MODEL', default='HuggingFaceTB/SmolLM2-1.7B-Instr
 AI_LOCAL_TIMEOUT_SECONDS = env.int('AI_LOCAL_TIMEOUT_SECONDS', default=120)
 # Drafts each member may request per hour (the model is slow and memory-hungry).
 AI_DRAFTS_PER_HOUR = env.int('AI_DRAFTS_PER_HOUR', default=10)
+
+# Hosted language-model service (place suggestions, packing list, place checks).
+# Works with any provider that offers an OpenAI-compatible endpoint. Leave AI_API_KEY empty to switch these
+# features off; the rest of the site is unaffected. The key lives in .env, never in git.
+AI_API_KEY = env('AI_API_KEY', default='')
+AI_API_BASE_URL = env('AI_API_BASE_URL', default='')       # empty = the OpenAI endpoint
+AI_API_MODEL = env('AI_API_MODEL', default='')
+AI_API_TIMEOUT_SECONDS = env.int('AI_API_TIMEOUT_SECONDS', default=30)
+AI_API_REQUESTS_PER_HOUR = env.int('AI_API_REQUESTS_PER_HOUR', default=30)

@@ -57,7 +57,7 @@ Where the numbers come from
   staying about 4.4x faster and using less than half the memory.
 
   Two honest limits. (1) We did not test models above 4B, so we cannot say whether a 70B model would be noticeably
-  better; the likely place it would be is factual accuracy. (2) Our grader checks format, not truth. Every small
+  better; the likely place it would be is factual accuracy. (2) Our scoring function checks format, not truth. Every small
   model sometimes invents place names (for example a "Yellowstone Wildlife Observatory"). That is why the app
   has the second-opinion place check (section 3) rather than trusting a bigger local model.
 

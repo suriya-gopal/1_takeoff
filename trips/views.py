@@ -21,7 +21,7 @@ from matplotlib.ticker import MaxNLocator
 
 from .access import api_login_required
 from .forms import JoinRequestForm, TripForm
-from .models import Destination, JoinRequest, Traveler, Trip
+from .models import Destination, ItineraryItem, JoinRequest, Traveler, Trip
 
 
 def visible_trips(user):
@@ -90,6 +90,15 @@ class TripListView(ListView):
     queryset = Trip.objects.filter(visibility=Trip.PUBLIC)
 
 
+def itinerary_by_day(trip):
+    """The trip's itinerary items grouped by day, each day in time order: [(day_number, [items])]."""
+    items = ItineraryItem.objects.filter(stop__trip=trip).select_related("stop__destination")
+    days = {}
+    for item in items.order_by("day_number", "start_time", "item_id"):
+        days.setdefault(item.day_number, []).append(item)
+    return sorted(days.items())
+
+
 class TripDetailView(LoginRequiredMixin, View):
     """
     One trip: its route, its join requests and the "Request to join" form.
@@ -105,6 +114,8 @@ class TripDetailView(LoginRequiredMixin, View):
             {
                 "trip": trip,
                 "stops": trip.stops.all(),
+                "is_owner": trip.owner == Traveler.for_user(request.user),
+                "item_days": itinerary_by_day(trip),
                 "join_requests": trip.join_requests.all(),
                 "form": form,
             },

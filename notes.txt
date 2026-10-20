@@ -1,0 +1,223 @@
+TakeOff - production reflection on the AI features
+Prepared 19 October 2026. Prices were read on that date and change often; treat every dollar figure as an estimate.
+
+Contents
+  1. The Size vs. Quality Trade-off
+  2. Cost & Scaling
+  3. Hybrid Potential
+  4. Cost Comparison
+  Sources and what was not measured
+
+Where the numbers come from
+  - Speed, memory and quality: our own 15-model benchmark (llm-test/ai_prototype.ipynb). It ran on a Colab
+    NVIDIA T4 (16 GB) in half precision, four fixed trips, greedy decoding, up to 400 new tokens.
+  - Server prices: AWS on-demand, us-east-1, Linux, via the DoiT price pages (links at the end).
+  - API prices: Google's Gemini pricing page; Groq and OpenAI prices from third-party price trackers (links at the end).
+  - The deployed setup is SmolLM2-1.7B with three worked examples in the prompt. Measured with those examples:
+    3.82 s per itinerary (vs 3.15 s without), prompt of about 550 tokens, reply of about 100 tokens (2-day trip).
+
+======================================================================
+1. THE SIZE VS. QUALITY TRADE-OFF
+======================================================================
+
+1a. What the 15-model test showed
+
+  Category (size)        Model               Params  Format   Strict  Score  Sec per   Peak
+                                                     adhere.  JSON          itinerary memory
+  Ultra-Light (<0.5B)    SmolLM2-135M         0.14B   0.00    0.00    0.193   17.4     0.29 GB
+                         SmolLM2-360M         0.36B   0.65    0.75    0.538    4.9     0.75 GB
+                         Qwen2.5-0.5B         0.49B   0.40    0.50    0.406    4.5     1.01 GB
+  Light (0.5-1.6B)       Qwen3-0.6B           0.6B    0.80    0.00    0.575    7.3     1.25 GB
+                         TinyLlama-1.1B       1.1B    0.00    0.00    0.144   12.3     2.24 GB
+                         Qwen2.5-1.5B         1.54B   1.00    1.00    0.708    6.5     3.12 GB
+  Small (1.6-2.5B)       SmolLM2-1.7B         1.7B    1.00    1.00    0.758    3.2     3.49 GB
+                         Qwen3-1.7B           1.7B    1.00    1.00    0.691    7.2     3.51 GB
+                         Granite-3.3-2B       2.5B    0.75    0.75    0.677   15.5     5.13 GB
+  Medium (2.5-3.5B)      Qwen2.5-3B           3.1B    0.50    0.50    0.384    7.4     6.21 GB
+                         SmolLM3-3B           3.1B    0.60    0.00    0.324    8.3     6.20 GB
+                         Granite-4.0-Micro    3.0B    0.95    0.75    0.754   11.2     6.86 GB
+  Large (3.5-4B)         Phi-3.5-mini         3.8B    0.70    0.50    0.630    9.8     7.85 GB
+                         Phi-4-mini           3.8B    0.80    0.00    0.553    7.8     7.74 GB
+                         Qwen3-4B             4.0B    1.00    1.00    0.816   16.8     8.15 GB
+
+  Score = 40% format adherence + 20% strict JSON + 15% notices "traveling with kids" + 15% speed + 10% memory.
+
+1b. Which size is the sweet spot?
+
+  About 1.5B to 1.7B parameters. Three models of that size (Qwen2.5-1.5B, SmolLM2-1.7B, Qwen3-1.7B) produced perfect
+  format, and only Qwen3-4B matched them above that size. Below 0.5B the models could not hold the JSON format. Above
+  2B quality did not keep rising: Qwen2.5-3B, SmolLM3-3B, Phi-3.5-mini and Phi-4-mini all scored below the 1.7B models,
+  mostly because they wrapped the JSON in extra text or code fences (strict JSON 0 to 0.5).
+
+1c. Was a bigger model significantly better for this task?
+
+  Not in the range we tested (up to 4B). The top scorer, Qwen3-4B (0.816), and SmolLM2-1.7B (0.758) had identical
+  format results. The 0.058 gap comes from one criterion: Qwen3-4B noticed "traveling with kids" without help.
+  Once SmolLM2 was given three worked examples it noticed it too (4 of 4 itineraries valid, kids noticed), while
+  staying about 4.4x faster and using less than half the memory.
+
+  Two honest limits. (1) We did not test models above 4B, so we cannot say whether a 70B model would be noticeably
+  better; the likely place it would be is factual accuracy. (2) Our scoring function checks format, not truth. Every small
+  model sometimes invents place names (for example a "Yellowstone Wildlife Observatory"). That is why the app
+  has the second-opinion place check (section 3) rather than trusting a bigger local model.
+
+1d. Expected cost to run each model on our own server
+
+  Assumptions: one NVIDIA T4 server, AWS g4dn.xlarge (4 vCPU, 16 GiB RAM, 16 GB GPU) at $0.526 per hour
+  = about $384 per month if left on 24/7. Every model in the test fits in its 16 GB GPU. One request at a time, so:
+      cost per 1,000 itineraries = seconds per itinerary / 3600 x $0.526 x 1000
+      most itineraries one T4 can serve per day = 86,400 / seconds per itinerary
+
+  Model               Memory     Sec per itinerary   Cost per 1,000   Max per day on one T4
+  SmolLM2-135M        0.29 GB        17.4               $2.54             4,965
+  SmolLM2-360M        0.75 GB         4.9               $0.71            17,704
+  Qwen2.5-0.5B        1.01 GB         4.5               $0.66            19,200
+  Qwen3-0.6B          1.25 GB         7.3               $1.07            11,803
+  TinyLlama-1.1B      2.24 GB        12.3               $1.79             7,053
+  Qwen2.5-1.5B        3.12 GB         6.5               $0.95            13,292
+  SmolLM2-1.7B        3.49 GB         3.2               $0.46            27,428
+  Qwen3-1.7B          3.51 GB         7.2               $1.05            11,966
+  Granite-3.3-2B      5.13 GB        15.5               $2.26             5,581
+  Qwen2.5-3B          6.21 GB         7.4               $1.08            11,644
+  SmolLM3-3B          6.20 GB         8.3               $1.21            10,434
+  Granite-4.0-Micro   6.86 GB        11.2               $1.63             7,728
+  Phi-3.5-mini        7.85 GB         9.8               $1.43             8,798
+  Phi-4-mini          7.74 GB         7.8               $1.14            11,048
+  Qwen3-4B            8.15 GB        16.8               $2.46             5,136
+
+  What this says: the cheapest model per itinerary is also our best-value pick (SmolLM2-1.7B, $0.46 per 1,000,
+  or about $0.56 per 1,000 with the three worked examples in the prompt). The best-scoring model costs 5.3x more per
+  itinerary. The hourly price is the same for all of them; what changes is how many requests each can serve.
+
+  Not measured: speed on a CPU-only server or on a laptop. Our timings are GPU timings. Run
+  `python manage.py check_local_model` on the real server and replace "seconds per itinerary" in the formulas above.
+
+======================================================================
+2. COST & SCALING
+======================================================================
+
+Scenario: 10,000 daily users, assuming each asks for one single-city draft per day on average (most users will not
+draft daily, but some will draft several cities; a 3-city trip makes three calls and costs about 3x as much).
+Peak hours matter more than the average, so we also plan for a busy hour at 5x the average.
+
+Per city-draft, deployed prompt: about 650 input tokens (rules + three examples + request) and about 120 output tokens.
+
+  Option                                   Cost per draft   10,000 drafts/day   Per 30 days
+  Local SmolLM2-1.7B on one T4, 24/7       $0.00056 *       $12.62 (server)     $379
+  Local, three T4 servers (peak headroom)  -                $37.87              $1,136
+  API: Gemini 3.1 Flash-Lite               $0.00034          $3.43               $103
+  API: Gemini 3.5 Flash-Lite               $0.00050          $4.95               $148
+  API: GPT-5 mini                          $0.00020          $2.01               $60
+  API: Llama 3.1 8B Instant (Groq)         $0.000042         $0.42               $13
+  API: Llama 3.3 70B Versatile (Groq)      $0.00048          $4.78               $143
+
+  * Cost per draft on a fully busy T4. A server costs the same whether it is busy or idle.
+
+Work needed on the local server: 10,000 drafts x 3.82 s = 38,200 s = 10.6 GPU-hours per day. One T4 handles at most
+about 22,600 drafts per day, so one server is already 44% busy on average and would be overloaded in a busy hour.
+That means at least two or three servers plus a queue.
+
+Recommendation: at 10,000 daily users, move to the hosted API for the main path and keep the local model as a fallback
+(or for features where data must not leave our servers).
+
+Why:
+  - A server is a fixed monthly cost. At this volume it sits mostly idle between peaks, so we pay for capacity not used.
+  - Even a perfectly busy T4 ($0.00056 per draft) costs more per draft than Gemini 3.1 Flash-Lite ($0.00034) and far
+    more than Llama 3.1 8B on Groq ($0.000042). A single T4 never reaches the break-even volume against Groq's 8B model
+    (about 300,000 drafts per day needed; one T4 can only serve about 22,600).
+  - The API scales with traffic without us running servers, handling failures or loading 3.5 GB models.
+
+When local would still win: sustained very high volume across many GPUs, prices rising sharply, strict privacy rules,
+or a need to work offline. Also, free tiers (Gemini offers one) cost nothing at low volume, but they have rate limits
+and are not meant for production traffic.
+
+Other costs not in the tables: engineer time to run GPU servers, data transfer, monitoring, storage for the model
+cache, and taxes. API prices can also change; some Gemini Flash models are listed with a price increase on 1 January 2027.
+
+======================================================================
+3. HYBRID POTENTIAL
+======================================================================
+
+What the app does today
+  1. The local model writes the draft (cheap, private, no per-call fee).
+  2. If a hosted API is configured, a second model checks the draft once per city: real places stay, a made-up
+     place is replaced by a real one when the assistant can name one, and anything it cannot confirm is marked.
+  3. The hosted API alone powers place suggestions and packing lists, where factual accuracy and variety matter more
+     than the lowest price. Packing lists are cached for six hours so identical requests do not pay twice.
+
+Why this saves money without losing quality
+  - The check call is small: about 150 tokens in and 60 out per city, roughly $0.00013 per city with Gemini 3.1
+    Flash-Lite or $0.000012 with Llama 3.1 8B. Writing the whole plan with a hosted model costs more and does not
+    remove the need to verify places.
+  - The local model does the volume work; the hosted model is paid for only where small models are weakest
+    (real-world facts).
+  - If the API is down or the key is missing, drafts still work and are labelled "not checked".
+
+More ways to combine them at scale
+  - Escalate only on failure: try the local model first (our test: 4 of 4 valid with examples) and call the API only when
+    the reply fails validation after retries.
+  - Split by size: short, single-city requests go local; long multi-city requests go to the API.
+  - Cache popular cities: store checked results per city and interest so repeated requests cost nothing.
+  - Keep the local model for private text (such as messages between travelers) and send only city names to the API.
+
+Risks to watch: two models can disagree; the checking model can also be wrong; the added call adds latency (not measured)
+and a dependency on one more provider.
+
+======================================================================
+4. COST COMPARISON
+======================================================================
+
+Server in question: 16 CPU cores, 16 GPU cores, 64 GB RAM, 1 TB disk. Closest cloud prices we could verify:
+  - 16 vCPU / 64 GiB, no GPU (AWS m7i.4xlarge, which is four times the m7i.xlarge price of $0.2016 per hour):
+    about $0.81 per hour = $589 per month.
+  - One GPU with plenty of memory (AWS g5.xlarge, NVIDIA A10G with 22 GB, 4 vCPU, 16 GiB): $1.006 per hour = $734 per month.
+  - Storage (1 TB) is a smaller cost and is not priced here.
+  A 64 GB machine can hold any model we tested (largest: 8 GB), including several copies at once.
+
+Break-even: an always-on server beats an API only when
+      requests per month x API price per request  >  monthly server cost.
+Using the $589 CPU server and $734 GPU server above:
+
+  API compared against                 API price per draft   Requests per month to break even
+                                                              $589 server      $734 server
+  Gemini 3.1 Flash-Lite                $0.00034              1.7 million      2.1 million
+  GPT-5 mini                           $0.00020              2.9 million      3.7 million
+  Llama 3.3 70B (Groq)                 $0.00048              1.2 million      1.5 million
+  Llama 3.1 8B Instant (Groq)          $0.000042             14 million       17 million
+
+  Break-even only matters if the server can handle that many requests. A CPU-only server will be much slower than the
+  T4 timings above (not measured), so check its real capacity with `check_local_model` first.
+
+Use the pre-trained model on our own server when:
+  - Traffic is steady and high enough to keep the server busy (above the break-even volume and within its capacity).
+  - The data must stay on our servers, or the service has to work without outside network access.
+  - The task is narrow and a 1-2B model does it well (as with our itinerary format).
+  - We have someone to run and monitor the server, and the extra delay of first loading the model is acceptable.
+  - We want a price that does not change with usage or with a provider's pricing decisions.
+
+Switch to a paid API (of comparable or larger size) when:
+  - Traffic is small, bursty or unpredictable (we would pay for an idle server).
+  - We need better factual accuracy or reasoning than a small model gives, such as checking places are real.
+  - We have no capacity to run GPU servers, or the host cannot hold the model (a free web host cannot).
+  - We are still testing: starting on a free tier costs nothing, and moving later is easy because the app talks to any
+    OpenAI-compatible endpoint.
+  - Latency matters and the API's hardware is faster than ours.
+
+Our situation today: a student project with low traffic. The on-device model is a good fit for demos on a laptop
+(free), the hosted API is the better fit for a public deployment on a small host, and the hybrid in section 3
+keeps both options open.
+
+======================================================================
+SOURCES AND WHAT WAS NOT MEASURED
+======================================================================
+
+  AWS g4dn.xlarge $0.526/hr:   https://www.doit.com/compute/spot/us-east-1/g4dn.xlarge
+  AWS g5.xlarge $1.006/hr:     https://www.doit.com/compute/spot/us-east-1/g5.xlarge
+  AWS m7i.xlarge $0.2016/hr:   https://www.doit.com/compute/spot/us-east-1/m7i.xlarge  (16 vCPU/64 GiB figure is 4x this)
+  Gemini API prices:           https://ai.google.dev/gemini-api/docs/pricing
+  Groq prices (tracker):       https://www.aipricing.guru/groq-pricing/   (page dates conflict; check Groq's own page)
+  GPT-5 mini price (tracker):  https://pricepertoken.com/pricing-page/model/openai-gpt-5-mini
+
+  Not measured: speed on CPU-only servers or laptops; real traffic patterns; hosted-model quality on our task;
+  token counts for each provider's own tokenizer (we used about 650 in / 120 out for every provider); storage, network
+  and staff costs; spot or reserved discounts; free-tier limits.

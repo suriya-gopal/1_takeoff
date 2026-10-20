@@ -21,6 +21,24 @@
     {% endfor %}
   </div>
 
+  <h3 class="section-title" id="days">Day by day</h3>
+  {% for day, items in item_days %}
+    <div class="panel">
+      <p class="title">Day {{ day }}</p>
+      {% for item in items %}
+        <p class="slot">{% if item.start_time %}<strong>{{ item.start_time|time:"H:i" }}</strong> &middot; {% endif %}{{ item.title }}
+           <span class="meta">&middot; {{ item.stop.destination.name }} &middot; {{ item.get_booking_status_display }}</span></p>
+      {% endfor %}
+    </div>
+  {% empty %}
+    <p class="empty-note">No itinerary items yet.</p>
+  {% endfor %}
+  {% if is_owner %}
+    <p><a class="button secondary" href="{% url 'trips:day-plan' trip.pk %}">Draft my days</a>
+       <a class="button secondary" href="{% url 'trips:place-suggestions' trip.pk %}">Find places</a></p>
+  {% endif %}
+  <p><a class="button secondary" href="{% url 'trips:packing-list' trip.pk %}">Packing list</a></p>
+
   <h3 class="section-title">Join requests</h3>
   <div class="trip-grid">
     {% for jr in join_requests %}

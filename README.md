@@ -32,6 +32,10 @@ optionally post the trip publicly so other travelers can ask to join.
 - **Reports and exports** — community totals plus CSV and JSON downloads.
 - **Accounts** — sign up, log in and log out with a username and password,
   or with **Continue with Google**; private pages and APIs need a signed-in user.
+- **Day-by-day drafts** — an on-device language model suggests a morning, afternoon and evening for each day of a
+  trip; members review the draft and save it. Setup and safeguards: [README_AI.md](README_AI.md).
+- **Place suggestions, packing list and place check** — an optional hosted assistant suggests places to visit,
+  builds a packing checklist and double-checks drafted places. Costs and trade-offs: [notes.txt](notes.txt).
 - **Django admin** — full CRUD over every model out of the box.
 
 ---

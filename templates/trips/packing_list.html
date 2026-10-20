@@ -1,0 +1,16 @@
+{% extends "trips/base.html" %}
+{% block title %}Packing list{% endblock %}
+{% block content %}
+  <h2 class="section-title">Packing list &middot; {{ trip.title }}</h2>
+  <p class="meta">Based on your route, dates, typical weather for that time of year and what you have planned.</p>
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+  {% if items %}
+    <ul class="checklist">
+      {% for entry in items %}
+        <li><label><input type="checkbox"> <strong>{{ entry.item }}</strong> <span class="meta">&middot; {{ entry.reason }}</span></label></li>
+      {% endfor %}
+    </ul>
+    <p class="meta">Tick items as you pack them. Ticks are not saved if you leave the page.</p>
+  {% endif %}
+  <p><a class="button secondary" href="{{ trip.get_absolute_url }}">Back to trip</a></p>
+{% endblock %}

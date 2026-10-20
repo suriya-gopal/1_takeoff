@@ -1,0 +1,51 @@
+{% extends "trips/base.html" %}
+{% block title %}Find places{% endblock %}
+{% block content %}
+  <h2 class="section-title">Find places &middot; {{ trip.title }}</h2>
+  <p class="meta">Ideas for what to do and eat in each city. Add the ones you want now and schedule them later.</p>
+
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+  {% if notice %}<p class="meta" role="status">{{ notice }}</p>{% endif %}
+
+  <div class="panel">
+    <form method="post">
+      {% csrf_token %}
+      <div><label for="stop">City</label>
+        <select name="stop" id="stop">
+          {% for s in stops %}<option value="{{ s.pk }}"{% if stop and s.pk == stop.pk %} selected{% endif %}>{{ s.destination.name }}</option>{% endfor %}
+        </select></div>
+      <div><label for="category">Looking for</label>
+        <select name="category" id="category">
+          {% for value, label in categories.items %}<option value="{{ value }}"{% if value == category %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+      <div>{{ form.interests.label_tag }} {{ form.interests }}</div>
+      <p><button type="submit">Find places</button></p>
+    </form>
+  </div>
+
+  {% if shown or only_free or only_gems %}
+    <p class="meta">Filter:
+      <a href="?{% if not only_free %}free=1{% endif %}{% if only_gems %}&gems=1{% endif %}">{% if only_free %}&#10003; {% endif %}Free only</a> &middot;
+      <a href="?{% if only_free %}free=1&{% endif %}{% if not only_gems %}gems=1{% endif %}">{% if only_gems %}&#10003; {% endif %}Hidden gems only</a>
+    </p>
+  {% endif %}
+
+  <div class="trip-grid">
+    {% for index, place in shown %}
+      <div class="trip-card">
+        <p class="title">{{ place.name }}{% if place.hidden_gem %} <span class="badge">Hidden gem</span>{% endif %}</p>
+        <p class="meta">{{ place.why }}</p>
+        <p class="meta">{% if place.free %}Free{% else %}About ${{ place.cost_usd|floatformat:0 }} per person{% endif %}
+          {% for tag in place.tags %} &middot; {{ tag }}{% endfor %}</p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="index" value="{{ index }}">
+          <button type="submit">+ Add</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="meta">Suggestions come from an AI assistant and can be wrong. Check opening times and details before you go.</p>
+  <p><a class="button secondary" href="{{ trip.get_absolute_url }}">Back to trip</a></p>
+{% endblock %}

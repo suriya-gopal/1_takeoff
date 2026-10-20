@@ -1,0 +1,48 @@
+{% extends "trips/base.html" %}
+{% block title %}Day-by-day plan{% endblock %}
+{% block content %}
+  <h2 class="section-title">Day-by-day plan &middot; {{ trip.title }}</h2>
+  <p class="meta">A suggested outline for each city on your route. Review it, then save what you like to your itinerary.</p>
+
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+
+  <div class="panel">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="draft">
+      <div>{{ form.interests.label_tag }} {{ form.interests }} {{ form.interests.errors }}</div>
+      <div>{{ form.with_kids }} {{ form.with_kids.label_tag }}</div>
+      <p><button type="submit">{% if plan %}Draft again{% else %}Draft my days{% endif %}</button>
+         <span class="meta">Drafting can take up to a minute.</span></p>
+    </form>
+  </div>
+
+  {% if plan %}
+    <h3 class="section-title">Suggested days</h3>
+    {% if place_check == "checked" %}
+      <p class="meta">Places were double-checked. Anything changed or unconfirmed is marked.</p>
+    {% elif place_check == "unchecked" %}
+      <p class="meta">The place check could not run, so please verify the places yourself before booking.</p>
+    {% endif %}
+    {% for stop in plan %}
+      <h4>{{ stop.city }}</h4>
+      <div class="trip-grid">
+        {% for day in stop.days %}
+          <div class="trip-card">
+            <p class="title">Day {{ day.number }}</p>
+            {% for label, text, note in day.slots %}
+              <p class="slot"><strong>{{ label }}</strong> &middot; {{ text }}{% if note %} <span class="meta">({{ note }})</span>{% endif %}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      <p><button type="submit">Save to my itinerary</button></p>
+    </form>
+  {% endif %}
+
+  <p><a class="button secondary" href="{{ trip.get_absolute_url }}">Back to trip</a></p>
+{% endblock %}

@@ -225,3 +225,9 @@ nav.subnav a.nav-auth + a.cta { margin-left: 0; }
   background: #fff; color: #1f1f1f; border: 1px solid #747775; border-radius: 999px; padding: .65rem 1rem;
   font-weight: 600; font-size: .95rem; }
 .google-button:hover { background: #f2f6fc; color: #1f1f1f; }
+
+/* Day-by-day plan */
+.slot { margin: .3rem 0; font-size: .92rem; }
+.form-error { color: #b3261e; background: #fdecea; border: 1px solid #f5c2bd; border-radius: var(--radius); padding: .6rem .8rem; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: .35rem 0; border-bottom: 1px solid var(--border); }

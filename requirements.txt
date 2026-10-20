@@ -4,3 +4,6 @@ django-cors-headers>=4.4
 matplotlib>=3.9
 requests>=2.32
 django-allauth[socialaccount]>=65.0
+torch>=2.4
+transformers>=4.56
+python-dotenv>=1.0

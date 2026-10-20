@@ -121,3 +121,15 @@ ACCOUNT_LOGOUT_REDIRECT_URL = LOGOUT_REDIRECT_URL
 CORS_ALLOWED_ORIGINS = ['https://vega.github.io']
 CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOW_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
+
+# AI features
+SITE_NAME = 'TakeOff'   # the product name used in prompts and messages
+# Day-by-day drafts come from a small language model that runs inside this server. The weights are
+# downloaded from Hugging Face on first use and cached on disk (never committed). Set
+# AI_LOCAL_ENABLED=False on hosts that cannot hold the model; the draft page then says it is unavailable.
+AI_LOCAL_ENABLED = env.bool('AI_LOCAL_ENABLED', default=True)
+AI_LOCAL_MODEL = env('AI_LOCAL_MODEL', default='HuggingFaceTB/SmolLM2-1.7B-Instruct')
+AI_LOCAL_TIMEOUT_SECONDS = env.int('AI_LOCAL_TIMEOUT_SECONDS', default=120)
+# Drafts each member may request per hour (the model is slow and memory-hungry).
+AI_DRAFTS_PER_HOUR = env.int('AI_DRAFTS_PER_HOUR', default=10)

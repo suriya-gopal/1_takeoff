@@ -8,7 +8,7 @@ from django.conf import settings
 
 from ..models import Traveler, Trip
 from ..views import visible_trips
-from . import guardrails, itinerary, model, remote, suggestions, verify
+from . import ask, guardrails, itinerary, model, remote, retrieval, suggestions, verify
 
 SESSION_KEY = "day_draft_{}"
 SLOT_LABELS = {"morning": "Morning", "afternoon": "Afternoon", "evening": "Evening"}
@@ -194,3 +194,50 @@ def packing_list(request, pk):
         except remote.ApiFailed:
             error, status = "The assistant could not put a list together this time. Please try again.", 502
     return render(request, "trips/packing_list.html", {"trip": trip, "items": items, "error": error}, status=status)
+
+
+class AskForm(forms.Form):
+    question = forms.CharField(
+        max_length=ask.MAX_QUESTION_LENGTH * 2, label="Your question",
+        widget=forms.TextInput(attrs={"placeholder": "e.g. How do I get from the airport to Kyoto?", "size": 60}),
+    )
+
+    def clean_question(self):
+        try:
+            return ask.check_question(self.cleaned_data["question"])
+        except guardrails.InvalidRequest as exc:
+            raise forms.ValidationError(str(exc))
+
+
+ASK_MESSAGES = {
+    "no_guides": "We do not have travel guides for the cities on this trip yet.",
+    "no_match": "The guides for this trip's cities do not cover that question. Try asking about getting around, "
+                "sights, food, seasons or costs.",
+    "sources_only": "The assistant could not write an answer this time, so here are the guide passages that match "
+                    "your question.",
+}
+
+
+@login_required
+def ask_trip(request, pk):
+    """Ask a question about the cities on a trip; answered from TakeOff's destination guides."""
+    trip = get_object_or_404(visible_trips(request.user), pk=pk)
+    form = AskForm(request.POST or None)
+    result, error, status = None, "", 200
+
+    if request.method == "POST" and not form.is_valid():
+        status = 400
+    elif request.method == "POST":
+        if not guardrails.allow_request(request.user.pk, settings.AI_ASK_PER_HOUR, scope="ask"):
+            error, status = "You have reached the hourly limit for questions. Please try again later.", 429
+        else:
+            try:
+                result = ask.answer_question(trip, form.cleaned_data["question"])
+            except retrieval.SearchUnavailable as exc:
+                error, status = str(exc), 503
+
+    return render(request, "trips/ask_trip.html", {
+        "trip": trip, "form": form, "result": result, "error": error,
+        "message": ASK_MESSAGES.get(result["status"], "") if result else "",
+        "cities": ask.trip_cities(trip),
+    }, status=status)

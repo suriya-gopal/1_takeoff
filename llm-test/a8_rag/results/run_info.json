@@ -1,0 +1,21 @@
+{
+ "dry_run": false,
+ "device": "mps",
+ "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+ "generator": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+ "embedding_models": {
+  "small": "sentence-transformers/all-MiniLM-L6-v2",
+  "medium": "sentence-transformers/all-mpnet-base-v2",
+  "large": "BAAI/bge-large-en-v1.5"
+ },
+ "top_k": 3,
+ "max_new_tokens": 120,
+ "best_config": [
+  "large",
+  "fixed"
+ ],
+ "weakest_config": [
+  "small",
+  "hybrid"
+ ]
+}

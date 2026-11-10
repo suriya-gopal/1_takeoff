@@ -1,0 +1,10 @@
+embedding,chunking,gold_hit_rate,mean_gold_rank,recall,context_quality,answer_quality,retrieval_ms,generation_s,prompt_tokens
+small,fixed,1.0,1.0,1.0,10.0,6.06,13.85,3.04,466.0
+small,overlap,1.0,1.12,1.0,10.0,6.62,6.45,3.97,859.25
+small,hybrid,1.0,1.0,1.0,10.0,5.5,8.48,2.42,501.75
+medium,fixed,1.0,1.0,1.0,10.0,7.75,17.51,2.84,449.88
+medium,overlap,1.0,1.0,1.0,10.0,7.19,10.29,4.01,845.38
+medium,hybrid,1.0,1.12,1.0,10.0,6.62,18.66,2.6,504.88
+large,fixed,1.0,1.0,1.0,10.0,8.88,36.22,2.88,447.62
+large,overlap,1.0,1.0,1.0,10.0,7.75,30.44,3.74,847.75
+large,hybrid,1.0,1.0,1.0,10.0,5.5,26.86,2.26,504.62

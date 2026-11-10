@@ -1,0 +1,10 @@
+embedding,chunking,hit@1,hit@3,hit@5,ranks
+small,fixed,8,8,8,1 1 1 1 1 1 1 1
+small,overlap,7,8,8,1 1 2 1 1 1 1 1
+small,hybrid,8,8,8,1 1 1 1 1 1 1 1
+medium,fixed,8,8,8,1 1 1 1 1 1 1 1
+medium,overlap,8,8,8,1 1 1 1 1 1 1 1
+medium,hybrid,7,8,8,1 1 1 2 1 1 1 1
+large,fixed,8,8,8,1 1 1 1 1 1 1 1
+large,overlap,8,8,8,1 1 1 1 1 1 1 1
+large,hybrid,8,8,8,1 1 1 1 1 1 1 1

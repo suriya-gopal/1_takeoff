@@ -134,6 +134,18 @@ AI_LOCAL_TIMEOUT_SECONDS = env.int('AI_LOCAL_TIMEOUT_SECONDS', default=120)
 # Drafts each member may request per hour (the model is slow and memory-hungry).
 AI_DRAFTS_PER_HOUR = env.int('AI_DRAFTS_PER_HOUR', default=10)
 
+# "Ask about this trip": questions answered from the destination guides in trips/ai/knowledge/ (A8/A9).
+# The embedding model finds the matching guide paragraphs; the on-device model above writes the answer.
+AI_EMBEDDING_MODEL = env('AI_EMBEDDING_MODEL', default='sentence-transformers/all-mpnet-base-v2')
+# Defaults come from the A8 experiments (llm-test/a8_rag/rag_analysis.md): mpnet with 60-word section-aware chunks
+# answered best after the fixes, and a 0.50 cosine score kept every answerable test question while blocking 6 of 8
+# questions the guides do not cover.
+AI_ASK_TOP_K = env.int('AI_ASK_TOP_K', default=3)              # guide chunks given to the model
+AI_ASK_CHUNK_WORDS = env.int('AI_ASK_CHUNK_WORDS', default=60)  # max words per chunk; 0 = whole paragraphs
+AI_ASK_MIN_SCORE = env.float('AI_ASK_MIN_SCORE', default=0.50)  # best chunk below this = "not covered"
+AI_ASK_MAX_NEW_TOKENS = env.int('AI_ASK_MAX_NEW_TOKENS', default=150)
+AI_ASK_PER_HOUR = env.int('AI_ASK_PER_HOUR', default=20)       # questions per member per hour
+
 # Hosted language-model service (place suggestions, packing list, place checks).
 # Works with any provider that offers an OpenAI-compatible endpoint. Leave AI_API_KEY empty to switch these
 # features off; the rest of the site is unaffected. The key lives in .env, never in git.

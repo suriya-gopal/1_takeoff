@@ -1,0 +1,97 @@
+embedding,chunking,kind,query,top1
+small,hybrid,answerable,How do I get from the airport to Kyoto?,0.7393019199371338
+small,hybrid,answerable,What local food should I try in Lisbon?,0.6595244407653809
+small,hybrid,answerable,Will Venice be flooded if I visit in November?,0.5995640158653259
+small,hybrid,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.5137615203857422
+small,hybrid,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7676485180854797
+small,hybrid,answerable,What is a cheap way to ride the subway a lot in New York?,0.6405236721038818
+small,hybrid,answerable,"Which is cheaper per day, Lisbon or Porto?",0.6942765712738037
+small,hybrid,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.5817570686340332
+small,hybrid,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.6811732053756714
+small,hybrid,not in guides,Which hotel in Kyoto has the best spa?,0.5970103740692139
+small,hybrid,not in guides,Is there a good dentist near the Colosseum in Rome?,0.5247886776924133
+small,hybrid,not in guides,What is the wifi password at Lisbon airport?,0.41594648361206055
+small,hybrid,not in guides,Can I bring my dog to a restaurant in Chicago?,0.5773333311080933
+small,hybrid,not in guides,Where can I buy hiking boots in Reykjavik?,0.4557584822177887
+small,hybrid,not in guides,Who designed the Milan metro map?,0.5248236656188965
+small,hybrid,not in guides,What time does the Porto cathedral open on Sundays?,0.3959035873413086
+small,hybrid60,answerable,How do I get from the airport to Kyoto?,0.7401617765426636
+small,hybrid60,answerable,What local food should I try in Lisbon?,0.6287646293640137
+small,hybrid60,answerable,Will Venice be flooded if I visit in November?,0.6751182675361633
+small,hybrid60,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.6404811143875122
+small,hybrid60,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7662997245788574
+small,hybrid60,answerable,What is a cheap way to ride the subway a lot in New York?,0.615007758140564
+small,hybrid60,answerable,"Which is cheaper per day, Lisbon or Porto?",0.7853571176528931
+small,hybrid60,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.6138878464698792
+small,hybrid60,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.7263885736465454
+small,hybrid60,not in guides,Which hotel in Kyoto has the best spa?,0.5774396657943726
+small,hybrid60,not in guides,Is there a good dentist near the Colosseum in Rome?,0.5133461952209473
+small,hybrid60,not in guides,What is the wifi password at Lisbon airport?,0.47235989570617676
+small,hybrid60,not in guides,Can I bring my dog to a restaurant in Chicago?,0.6045699119567871
+small,hybrid60,not in guides,Where can I buy hiking boots in Reykjavik?,0.47756922245025635
+small,hybrid60,not in guides,Who designed the Milan metro map?,0.5441000461578369
+small,hybrid60,not in guides,What time does the Porto cathedral open on Sundays?,0.4080425500869751
+medium,hybrid,answerable,How do I get from the airport to Kyoto?,0.7972335815429688
+medium,hybrid,answerable,What local food should I try in Lisbon?,0.692036509513855
+medium,hybrid,answerable,Will Venice be flooded if I visit in November?,0.5907745361328125
+medium,hybrid,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.45723721385002136
+medium,hybrid,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7821071147918701
+medium,hybrid,answerable,What is a cheap way to ride the subway a lot in New York?,0.6916766166687012
+medium,hybrid,answerable,"Which is cheaper per day, Lisbon or Porto?",0.6322973370552063
+medium,hybrid,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.5361255407333374
+medium,hybrid,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.6094873547554016
+medium,hybrid,not in guides,Which hotel in Kyoto has the best spa?,0.5558557510375977
+medium,hybrid,not in guides,Is there a good dentist near the Colosseum in Rome?,0.3538019061088562
+medium,hybrid,not in guides,What is the wifi password at Lisbon airport?,0.4110712707042694
+medium,hybrid,not in guides,Can I bring my dog to a restaurant in Chicago?,0.4930965304374695
+medium,hybrid,not in guides,Where can I buy hiking boots in Reykjavik?,0.41414958238601685
+medium,hybrid,not in guides,Who designed the Milan metro map?,0.49769747257232666
+medium,hybrid,not in guides,What time does the Porto cathedral open on Sundays?,0.4398652911186218
+medium,hybrid60,answerable,How do I get from the airport to Kyoto?,0.7452852725982666
+medium,hybrid60,answerable,What local food should I try in Lisbon?,0.7378031015396118
+medium,hybrid60,answerable,Will Venice be flooded if I visit in November?,0.6858392953872681
+medium,hybrid60,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.6078147292137146
+medium,hybrid60,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7714254260063171
+medium,hybrid60,answerable,What is a cheap way to ride the subway a lot in New York?,0.6222020983695984
+medium,hybrid60,answerable,"Which is cheaper per day, Lisbon or Porto?",0.6948147416114807
+medium,hybrid60,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.5507925748825073
+medium,hybrid60,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.6200488209724426
+medium,hybrid60,not in guides,Which hotel in Kyoto has the best spa?,0.5380556583404541
+medium,hybrid60,not in guides,Is there a good dentist near the Colosseum in Rome?,0.45533379912376404
+medium,hybrid60,not in guides,What is the wifi password at Lisbon airport?,0.39030325412750244
+medium,hybrid60,not in guides,Can I bring my dog to a restaurant in Chicago?,0.4386938214302063
+medium,hybrid60,not in guides,Where can I buy hiking boots in Reykjavik?,0.40036141872406006
+medium,hybrid60,not in guides,Who designed the Milan metro map?,0.4822688698768616
+medium,hybrid60,not in guides,What time does the Porto cathedral open on Sundays?,0.4366093873977661
+large,hybrid,answerable,How do I get from the airport to Kyoto?,0.8050016164779663
+large,hybrid,answerable,What local food should I try in Lisbon?,0.7005158066749573
+large,hybrid,answerable,Will Venice be flooded if I visit in November?,0.6490041017532349
+large,hybrid,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.6448346376419067
+large,hybrid,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7498220205307007
+large,hybrid,answerable,What is a cheap way to ride the subway a lot in New York?,0.7285295128822327
+large,hybrid,answerable,"Which is cheaper per day, Lisbon or Porto?",0.6921728849411011
+large,hybrid,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.7051787972450256
+large,hybrid,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.7022840976715088
+large,hybrid,not in guides,Which hotel in Kyoto has the best spa?,0.6092157363891602
+large,hybrid,not in guides,Is there a good dentist near the Colosseum in Rome?,0.6334259510040283
+large,hybrid,not in guides,What is the wifi password at Lisbon airport?,0.6068692803382874
+large,hybrid,not in guides,Can I bring my dog to a restaurant in Chicago?,0.6026393175125122
+large,hybrid,not in guides,Where can I buy hiking boots in Reykjavik?,0.5521340370178223
+large,hybrid,not in guides,Who designed the Milan metro map?,0.5824933052062988
+large,hybrid,not in guides,What time does the Porto cathedral open on Sundays?,0.6047424077987671
+large,hybrid60,answerable,How do I get from the airport to Kyoto?,0.8084229826927185
+large,hybrid60,answerable,What local food should I try in Lisbon?,0.7123916149139404
+large,hybrid60,answerable,Will Venice be flooded if I visit in November?,0.7167965173721313
+large,hybrid60,answerable,Do I need to book the Last Supper in Milan ahead of time?,0.7193949222564697
+large,hybrid60,answerable,Can I see the northern lights on a July trip to Reykjavik?,0.7254539728164673
+large,hybrid60,answerable,What is a cheap way to ride the subway a lot in New York?,0.7119594216346741
+large,hybrid60,answerable,"Which is cheaper per day, Lisbon or Porto?",0.7298358678817749
+large,hybrid60,answerable,Where can I see free-roaming deer on a day trip from Osaka?,0.7294992208480835
+large,hybrid60,not in guides,What is the best sushi restaurant in Tokyo for a birthday dinner?,0.6807923316955566
+large,hybrid60,not in guides,Which hotel in Kyoto has the best spa?,0.6042653322219849
+large,hybrid60,not in guides,Is there a good dentist near the Colosseum in Rome?,0.6504443883895874
+large,hybrid60,not in guides,What is the wifi password at Lisbon airport?,0.6191035509109497
+large,hybrid60,not in guides,Can I bring my dog to a restaurant in Chicago?,0.6049358248710632
+large,hybrid60,not in guides,Where can I buy hiking boots in Reykjavik?,0.5568656921386719
+large,hybrid60,not in guides,Who designed the Milan metro map?,0.5829696655273438
+large,hybrid60,not in guides,What time does the Porto cathedral open on Sundays?,0.6024383306503296

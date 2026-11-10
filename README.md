@@ -36,6 +36,9 @@ optionally post the trip publicly so other travelers can ask to join.
   trip; members review the draft and save it. Setup and safeguards: [README_AI.md](README_AI.md).
 - **Place suggestions, packing list and place check** — an optional hosted assistant suggests places to visit,
   builds a packing checklist and double-checks drafted places. Costs and trade-offs: [notes.txt](notes.txt).
+- **Ask about this trip** — members ask a travel question about the cities on a trip; TakeOff finds the matching
+  passages in its destination guides with a sentence-transformers embedding model and the on-device language model
+  answers from them, showing its sources. How it works and how it was evaluated: [README_AI.md](README_AI.md).
 - **Django admin** — full CRUD over every model out of the box.
 
 ---
@@ -352,6 +355,27 @@ python manage.py runserver
 
 `db.sqlite3` ships with seeded data, so `migrate` + `runserver` is enough to
 see the app working.
+
+### AI features: first run and model downloads
+
+The AI features run on open models from Hugging Face; no paid API is needed for them.
+
+| Feature | Where | Models (downloaded on first use) |
+|---|---|---|
+| Ask about this trip | trip page → **Ask about this trip** (`/trips/<id>/ask/`) | `sentence-transformers/all-mpnet-base-v2` (about 420 MB) and `HuggingFaceTB/SmolLM2-1.7B-Instruct` (about 3.4 GB) |
+| Day-by-day drafts | trip page → **Draft my days** (`/trips/<id>/days/`, owner only) | `HuggingFaceTB/SmolLM2-1.7B-Instruct` |
+
+- The first question or draft downloads the weights into the Hugging Face cache (`~/.cache/huggingface`) and takes
+  a few minutes; later requests reuse them. Weights are never stored in the project and are ignored by git.
+- To download them ahead of the demo: `python manage.py check_local_model` (generator) and
+  `python manage.py evaluate_ask` (embedding model and generator, and runs the evaluation cases).
+- Memory: about 4 GB in total. An NVIDIA GPU or Apple GPU is used when present, otherwise the CPU.
+- The hosted assistant (Find places, Packing list) is optional and off unless `AI_API_KEY` is set in `.env`.
+
+To try **Ask about this trip**: log in as `tester`, open **Community trips**, choose a public trip such as
+"Northern Italy by rail" or "Japan first-timer loop", press **Ask about this trip** and ask, for example, "Do we need
+to book the Last Supper in Milan?". Any signed-in member can ask about a public trip or their own private trips.
+Answers cover the 12 destinations in the seed data.
 
 ### Admin logins
 

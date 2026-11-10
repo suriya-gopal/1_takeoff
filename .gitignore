@@ -33,4 +33,7 @@ htmlcov/
 *.pth
 *.gguf
 *.onnx
+*.npy
 .cache/
+hf_cache/
+llm-test/**/.ipynb_checkpoints/

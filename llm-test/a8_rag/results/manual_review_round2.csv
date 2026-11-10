@@ -1,0 +1,121 @@
+embedding,chunking,qid,run,verdict,reason,answer_start
+large,fixed,Q1,before,correct,"Haruka 75-80 min and shinkansen from Tokyo, all from the guide","To get from the airport to Kyoto, you can either take the tr"
+large,fixed,Q2,before,partial,Nata and bifana correct; 'sweet-and-sour sardines' is Venice's dish,"In Lisbon, you should try the local food such as Pastéis de "
+large,fixed,Q3,before,correct,"Acqua alta autumn to spring, MOSE, sirens",Venice may experience flooding due to high tides called acqu
+large,fixed,Q4,before,correct,"Yes, book ahead","Yes, Leonardo da Vinci's Last Supper is recommended to visit"
+large,fixed,Q5,before,partial,Correct 'no'; season given as late August to April,"No, it is highly unlikely to see the northern lights during "
+large,fixed,Q6,before,correct,"OMNY tap, free after 12 paid rides in seven days",A cheap way to ride the subway a lot in New York is by tappi
+large,fixed,Q7,before,correct,"Porto cheaper, $85 against $95","Based on the given information, Porto is cheaper per day com"
+large,fixed,Q8,before,partial,Nara correct; says it is reached by the airport trains,"On a day trip from Osaka, you can visit Nara, which is easil"
+large,fixed,Q1,A: 60-word chunks,correct,Haruka 75-80 min and shinkansen from Tokyo,"To get from the airport to Kyoto, you can take the JR Haruka"
+large,fixed,Q2,A: 60-word chunks,correct,"Bacalhau, grilled sardines, bifana, pastel de nata","In Lisbon, you should try the local food such as bacalhau (s"
+large,fixed,Q3,A: 60-word chunks,partial,Acqua alta and MOSE correct; invents 'October through March',Venice will likely experience some flooding due to high tide
+large,fixed,Q4,A: 60-word chunks,correct,"Yes, timed slots that sell out","Yes, Leonardo da Vinci's Last Supper requires timed entry sl"
+large,fixed,Q5,A: 60-word chunks,correct,No; darker months September to April,"No, it is best to plan your trip during the darker months (S"
+large,fixed,Q6,A: 60-word chunks,wrong,Recommends the Venice traghetto gondola for the New York subway,A cheap way to ride the subway a lot in New York is by using
+large,fixed,Q7,A: 60-word chunks,wrong,Says Lisbon is cheaper while quoting $95 against $85,"Based on the provided information, Lisbon is cheaper per day"
+large,fixed,Q8,A: 60-word chunks,partial,Nara correct; says the Osaka Loop Line goes there,"On a day trip from Osaka, you can visit Nara, which is known"
+large,fixed,Q1,B: city filter,partial,Haruka correct; says the shinkansen runs from Kansai airport,"To get from the airport to Kyoto, you can take the JR Haruka"
+large,fixed,Q2,B: city filter,correct,"Nata, bifana, grilled sardines, all Lisbon","In Lisbon, you should try the pastéis de nata, a custard tar"
+large,fixed,Q3,B: city filter,correct,"Acqua alta autumn to spring, MOSE, sirens",Venice may experience flooding due to high tides called acqu
+large,fixed,Q4,B: city filter,correct,"Yes, book ahead","Yes, Leonardo da Vinci's Last Supper is recommended to be bo"
+large,fixed,Q5,B: city filter,partial,Correct 'no'; late August to April,"No, it is highly unlikely to see the northern lights during "
+large,fixed,Q6,B: city filter,wrong,"MetroCard at $33 and $127, not in the guide",One cheap way to ride the subway a lot in New York is by pur
+large,fixed,Q7,B: city filter,correct,"Porto cheaper, $85 against $95","Based on the given information, Porto is cheaper per day com"
+large,fixed,Q8,B: city filter,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is known"
+large,fixed,Q1,"C: grounded prompt, best last",partial,"Haruka correct; adds flights from Tokyo, car hire and taxis","To get from the airport to Kyoto, you can either fly into Ka"
+large,fixed,Q2,"C: grounded prompt, best last",wrong,Lists Venice's cicchetti and sarde in saor as Lisbon food,"In Lisbon, you can try cicchetti, which are small snacks typ"
+large,fixed,Q3,"C: grounded prompt, best last",partial,Acqua alta and MOSE correct; invents 'less rainfall in winter',Venice may experience flooding due to high tides known as ac
+large,fixed,Q4,"C: grounded prompt, best last",correct,"Yes, book ahead","Yes, you should book the Last Supper in Milan ahead of time "
+large,fixed,Q5,"C: grounded prompt, best last",partial,Correct 'no'; wrong reason (short days),"No, seeing the northern lights during a July trip to Reykjav"
+large,fixed,Q6,"C: grounded prompt, best last",wrong,"MetroCard and off-peak fares, not in the guide; mentions TKTS",One cheap way to ride the subway a lot in New York is by pur
+large,fixed,Q7,"C: grounded prompt, best last",wrong,Says Lisbon is cheaper,Lisbon is cheaper per day than Porto according to TakeOff's 
+large,fixed,Q8,"C: grounded prompt, best last",correct,Nara Park deer,"Nara, an easy day trip from Osaka, offers the opportunity to"
+large,fixed,Q1,A+B+C,correct,Haruka 75-80 min and shinkansen from Tokyo,"To get from the airport to Kyoto, international travelers ca"
+large,fixed,Q2,A+B+C,wrong,Lists fado as food and invents 'pastéis de búhlava',"In Lisbon, you should try the local food such as fado (Portu"
+large,fixed,Q3,A+B+C,correct,"Some flooding likely, MOSE, check the tide forecast",Venice will likely experience some flooding due to high tide
+large,fixed,Q4,A+B+C,correct,"Yes, book ahead","Yes, you should book the Last Supper tickets in advance for "
+large,fixed,Q5,A+B+C,correct,No: summer nights have very little darkness,"No, you cannot see the Northern Lights (Aurora Borealis) dur"
+large,fixed,Q6,A+B+C,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+large,fixed,Q7,A+B+C,wrong,Says Lisbon is cheaper while quoting $95 against $85,"Lisbon is cheaper per day compared to Porto, as stated in Ta"
+large,fixed,Q8,A+B+C,partial,Nara correct; says the Osaka Loop Line goes there,"On a day trip from Osaka, you can visit Nara, which is easil"
+medium,hybrid,Q1,before,partial,Haruka correct; adds car hire and taxis,"To get from Kansai International Airport (KIX) to Kyoto, you"
+medium,hybrid,Q2,before,correct,Pastel de nata only: correct but incomplete,"In Lisbon, you should try the Pastéis de Belém, a custard ta"
+medium,hybrid,Q3,before,wrong,"'No, Venice will not be flooded'","No, Venice will not be flooded if you visit in November."
+medium,hybrid,Q4,before,correct,"Yes, book ahead","Yes, you should book your visit to Leonardo da Vinci's Last "
+medium,hybrid,Q5,before,partial,Correct 'no'; wrong reason (short daylight),"No, it is highly unlikely to see the northern lights during "
+medium,hybrid,Q6,before,partial,OMNY 12-ride cap correct; muddled as 'unlimited for 7 days',"In New York, one can ride the subway a lot on a budget by us"
+medium,hybrid,Q7,before,correct,"Porto cheaper, $85 against $95","Based on the provided information, Porto is cheaper per day "
+medium,hybrid,Q8,before,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is known"
+medium,hybrid,Q1,A: 60-word chunks,partial,Haruka correct; invents a shinkansen from Osaka's Itami airport,"To get from the airport to Kyoto, international travelers ca"
+medium,hybrid,Q2,A: 60-word chunks,partial,Nata correct; calls Porto's francesinha a Lisbon pork sandwich,"In Lisbon, you should try the Pastéis de Belém, a custard ta"
+medium,hybrid,Q3,A: 60-word chunks,partial,Acqua alta correct; invents less flooding in winter,Venice may experience flooding due to high tides called acqu
+medium,hybrid,Q4,A: 60-word chunks,correct,"Yes, book ahead","Yes, you should book a visit to Leonardo da Vinci's Last Sup"
+medium,hybrid,Q5,A: 60-word chunks,partial,Correct 'no'; mixes 'short days' with 'lack of darkness',"No, you cannot see the northern lights during a July trip to"
+medium,hybrid,Q6,A: 60-word chunks,wrong,"Unlimited MetroCard for 7, 30 or 90 days, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+medium,hybrid,Q7,A: 60-word chunks,correct,"Porto cheaper, $85 against $95","Based on the provided information, Porto appears to be cheap"
+medium,hybrid,Q8,A: 60-word chunks,partial,Nara correct; says the Osaka Loop Line goes to Nara,"On a day trip from Osaka, you can visit Nara, which is known"
+medium,hybrid,Q1,B: city filter,partial,Haruka correct; invents shinkansen from 'Kobe's Itami Airport',"To get from the airport to Kyoto, international travelers ca"
+medium,hybrid,Q2,B: city filter,correct,"Nata, bacalhau, bifana, all Lisbon","In Lisbon, you should try the Pastéis de Belém, a custard ta"
+medium,hybrid,Q3,B: city filter,wrong,"'No, Venice will not be flooded'","No, Venice will not be flooded if you visit in November."
+medium,hybrid,Q4,B: city filter,partial,"Yes, book ahead; adds GetYourGuide, not in the guide","Yes, you should book your visit to Leonardo da Vinci's Last "
+medium,hybrid,Q5,B: city filter,partial,Correct 'no'; wrong reason (short daylight),"No, it is highly unlikely to see the northern lights during "
+medium,hybrid,Q6,B: city filter,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+medium,hybrid,Q7,B: city filter,correct,"Porto cheaper, $85 against $95","Based on the provided information, Porto is cheaper per day "
+medium,hybrid,Q8,B: city filter,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is known"
+medium,hybrid,Q1,"C: grounded prompt, best last",partial,Haruka correct; shinkansen '2 hours 15' given without saying it is from Tokyo,"To get from Kansai International Airport (KIX) to Kyoto, you"
+medium,hybrid,Q2,"C: grounded prompt, best last",correct,"Nata, bacalhau, grilled sardines, all Lisbon","In Lisbon, you should try the pastéis de nata, a custard tar"
+medium,hybrid,Q3,"C: grounded prompt, best last",partial,"Flooding likely, MOSE; invents 'less rainfall' and 'not severe'",Venice will likely experience some flooding due to high tide
+medium,hybrid,Q4,"C: grounded prompt, best last",wrong,"'No, you do not need to book'","No, you do not need to book the Last Supper in Milan ahead o"
+medium,hybrid,Q5,"C: grounded prompt, best last",partial,Correct 'no'; wrong reason (short daylight),"No, seeing the northern lights during a July trip to Reykjav"
+medium,hybrid,Q6,"C: grounded prompt, best last",wrong,"Unlimited MetroCard for $33, not in the guide",One cheap way to ride the subway a lot in New York is by pur
+medium,hybrid,Q7,"C: grounded prompt, best last",wrong,"Porto cheaper but swaps the prices (Porto $95, Lisbon $85)",Porto is cheaper per day than Lisbon. According to TakeOff's
+medium,hybrid,Q8,"C: grounded prompt, best last",correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is easil"
+medium,hybrid,Q1,A+B+C,correct,Haruka 75-80 min and shinkansen from Tokyo,"To get from the airport to Kyoto, international travelers ca"
+medium,hybrid,Q2,A+B+C,correct,"Pastel de nata and bacalhau, both Lisbon","In Lisbon, you should try the pastéis de nata, a custard tar"
+medium,hybrid,Q3,A+B+C,correct,"Acqua alta happens in autumn and winter, so November carries some risk; check tides",Venice will likely experience some flooding due to high tide
+medium,hybrid,Q4,A+B+C,correct,"Yes, book ahead","Yes, booking the Last Supper tickets in Milan ahead of time "
+medium,hybrid,Q5,A+B+C,correct,No: summer has extended daylight,"No, you cannot see the northern lights during a July trip to"
+medium,hybrid,Q6,A+B+C,wrong,"Unlimited MetroCard for 7, 30 or 90 days, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+medium,hybrid,Q7,A+B+C,correct,"Porto cheaper, $85 against $95",Porto is cheaper per day than Lisbon. According to TakeOff's
+medium,hybrid,Q8,A+B+C,partial,Nara correct; invents a cost of '$10-$20 per person',"On a day trip from Osaka, you can visit Nara, which is known"
+small,hybrid,Q1,before,partial,Haruka correct; adds car hire and taxis,"To get from the airport to Kyoto, you can take the JR Haruka"
+small,hybrid,Q2,before,partial,Nata correct; francesinha belongs to Porto,"In Lisbon, you should try the Pastéis de Belém, a custard ta"
+small,hybrid,Q3,before,wrong,"'No, Venice will not be flooded'","No, Venice will not be flooded if you visit in November."
+small,hybrid,Q4,before,correct,"Yes, book ahead","Yes, you should book your visit to Leonardo da Vinci's Last "
+small,hybrid,Q5,before,partial,Correct 'no'; wrong reason (short daylight),"No, it is highly unlikely to see the northern lights during "
+small,hybrid,Q6,before,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+small,hybrid,Q7,before,wrong,Says Lisbon is cheaper while quoting $95 against $85,"Based on the information provided, Lisbon is generally consi"
+small,hybrid,Q8,before,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is easil"
+small,hybrid,Q1,A: 60-word chunks,partial,Haruka correct; invents a shinkansen from Osaka's Itami airport,"To get from the airport to Kyoto, international travelers ca"
+small,hybrid,Q2,A: 60-word chunks,partial,"Nata and bacalhau correct; adds 'à brás' with potatoes, not in the guide","In Lisbon, you should try the pastéis de nata (custard tarts"
+small,hybrid,Q3,A: 60-word chunks,partial,Acqua alta correct; invents less flooding in winter,Venice may experience flooding due to high tides called acqu
+small,hybrid,Q4,A: 60-word chunks,correct,"Yes, book ahead","Yes, you should book your visit to Leonardo da Vinci's Last "
+small,hybrid,Q5,A: 60-word chunks,partial,Correct 'no'; mixes 'short days' with 'lack of darkness',"No, you cannot see the northern lights during a July trip to"
+small,hybrid,Q6,A: 60-word chunks,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+small,hybrid,Q7,A: 60-word chunks,correct,"Porto cheaper, $85 against $95","Based on the provided information, Porto appears to be cheap"
+small,hybrid,Q8,A: 60-word chunks,correct,Nara Park deer,"On a day trip from Osaka to Nara, you can visit Nara Park, w"
+small,hybrid,Q1,B: city filter,partial,Haruka correct; invents shinkansen from Itami and 'Kobe's Italia Airport',"To get from the airport to Kyoto, international travelers ca"
+small,hybrid,Q2,B: city filter,correct,"Nata, bacalhau, bifana, all Lisbon","In Lisbon, you should try the Pastéis de Belém, a custard ta"
+small,hybrid,Q3,B: city filter,wrong,"'No, Venice will not be flooded'","No, Venice will not be flooded if you visit in November."
+small,hybrid,Q4,B: city filter,partial,"Yes, book ahead; adds GetYourGuide","Yes, you should book your visit to Leonardo da Vinci's Last "
+small,hybrid,Q5,B: city filter,partial,Correct 'no'; wrong reason (short daylight),"No, it is highly unlikely to see the northern lights during "
+small,hybrid,Q6,B: city filter,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+small,hybrid,Q7,B: city filter,wrong,Says Lisbon is cheaper,"Based on the information provided, Lisbon is generally consi"
+small,hybrid,Q8,B: city filter,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is known"
+small,hybrid,Q1,"C: grounded prompt, best last",partial,Haruka correct; says the shinkansen runs from Kansai airport,"To get from the airport to Kyoto, you can take the JR Haruka"
+small,hybrid,Q2,"C: grounded prompt, best last",wrong,Only Porto's francesinha,"In Lisbon, you should try the francesinha, a sandwich layere"
+small,hybrid,Q3,"C: grounded prompt, best last",partial,"Flooding likely, MOSE; invents 'less rainfall' and 'not severe'",Venice will likely experience some flooding due to high tide
+small,hybrid,Q4,"C: grounded prompt, best last",correct,"Yes, book ahead","Yes, you should book the Last Supper tickets in Milan ahead "
+small,hybrid,Q5,"C: grounded prompt, best last",partial,Correct 'no'; wrong reason (short daylight),"No, seeing the northern lights during a July trip to Reykjav"
+small,hybrid,Q6,"C: grounded prompt, best last",wrong,"Unlimited MetroCard for $34.95, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+small,hybrid,Q7,"C: grounded prompt, best last",correct,"Porto cheaper, $85 against $95",Porto is cheaper per day than Lisbon. According to TakeOff's
+small,hybrid,Q8,"C: grounded prompt, best last",partial,Nara correct; says the Haruka goes there,"On a day trip from Osaka, you can visit Nara, which is easil"
+small,hybrid,Q1,A+B+C,partial,"Haruka 75-80 min present but called a bus, and a shinkansen from Kansai airport is invented","To get from the airport to Kyoto, international travelers ca"
+small,hybrid,Q2,A+B+C,partial,"Nata, bacalhau, sardines, bifana correct; calls pastéis de Belém a 'pastry from Belém Tower'","In Lisbon, you can try the local food such as the pastéis de"
+small,hybrid,Q3,A+B+C,correct,"Acqua alta happens in autumn and winter, so November carries some risk; check tides",Venice will likely experience some flooding due to high tide
+small,hybrid,Q4,A+B+C,correct,"Yes, book ahead","Yes, booking the Last Supper tickets in Milan ahead of time "
+small,hybrid,Q5,A+B+C,correct,No: summer has extended daylight,"No, you cannot see the northern lights during a July trip to"
+small,hybrid,Q6,A+B+C,wrong,"Unlimited MetroCard, not in the guide",A cheap way to ride the subway a lot in New York is by purch
+small,hybrid,Q7,A+B+C,correct,"Porto cheaper, $85 against $95",Porto is cheaper per day than Lisbon. According to TakeOff's
+small,hybrid,Q8,A+B+C,correct,Nara Park deer,"On a day trip from Osaka, you can visit Nara, which is easil"

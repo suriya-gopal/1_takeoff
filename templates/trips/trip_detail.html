@@ -6,7 +6,7 @@
      &middot; {{ trip.get_status_display }}
      &middot; {{ trip.seats_open }} seat{{ trip.seats_open|pluralize }} left
      &middot; ${{ trip.budget_min_usd|floatformat:0 }}&ndash;${{ trip.budget_max_usd|floatformat:0 }} per person
-     &middot; posted by {{ trip.owner.display_name }}{% if trip.owner.is_domain_verified %} &#10003; verified{% endif %}</p>
+     &middot; posted by {% include "trips/_traveler.html" with t=trip.owner %}</p>
   <p><a class="button secondary" href="{% url 'trips:trip-budget' trip.pk %}">See this budget in local currency</a></p>
 
   <h3 class="section-title">Route</h3>
@@ -33,27 +33,39 @@
   {% empty %}
     <p class="empty-note">No itinerary items yet.</p>
   {% endfor %}
-  {% if is_owner %}
+  {% if can_plan %}
     <p><a class="button secondary" href="{% url 'trips:day-plan' trip.pk %}">Draft my days</a>
        <a class="button secondary" href="{% url 'trips:place-suggestions' trip.pk %}">Find places</a></p>
   {% endif %}
   <p><a class="button secondary" href="{% url 'trips:packing-list' trip.pk %}">Packing list</a>
      <a class="button secondary" href="{% url 'trips:ask-trip' trip.pk %}">Ask about this trip</a></p>
 
-  <h3 class="section-title">Join requests</h3>
-  <div class="trip-grid">
+  <h3 class="section-title">Travelling together</h3>
+  <p class="meta">{% include "trips/_traveler.html" with t=trip.owner %} (owner){% for c in co_owners %} &middot; {% include "trips/_traveler.html" with t=c %} (co-owner){% endfor %}</p>
+
+  {% if is_owner or is_co_owner %}
+    {# Only the owner and co-owners see who asked to join; only the owner decides. #}
+    {% if is_co_owner %}<p class="notice">You are a co-owner of this trip: you can plan days and add places. The owner decides on new requests.</p>{% endif %}
+    <h3 class="section-title">Requests to join this trip</h3>
     {% for jr in join_requests %}
-      <div class="trip-card">
-        <p class="title">{{ jr.requester.display_name }}</p>
-        <p class="meta">{{ jr.get_status_display }} &middot; requested {{ jr.requested_at|date:"M j" }}</p>
+      <div class="panel request">
+        <p><strong>{% include "trips/_traveler.html" with t=jr.requester %}</strong>
+           <span class="badge status-{{ jr.status }}">{{ jr.get_status_display }}</span></p>
+        {% if jr.message %}<p class="meta">&ldquo;{{ jr.message }}&rdquo;</p>{% endif %}
+        <p class="meta">Requested {{ jr.requested_at|date:"M j, Y" }}</p>
+        {% if is_owner %}{% include "trips/_decide_buttons.html" with next=request.path %}{% endif %}
       </div>
     {% empty %}
-      <p class="empty-note">No join requests yet.</p>
+      <p class="empty-note">No one has asked to join yet.{% if trip.visibility != 'public' %} Make the trip public so other travelers can find it.{% endif %}</p>
     {% endfor %}
-  </div>
-
+  {% elif my_request %}
+    <div class="panel">
+      <h3>Your request to join</h3>
+      <p><span class="badge status-{{ my_request.status }}">{{ my_request.get_status_display }}</span>
+         <span class="meta">sent {{ my_request.requested_at|date:"M j, Y" }}</span></p>
+    </div>
   {# Request to join: a form that creates a join request for this trip. #}
-  {% if trip.visibility == 'public' and trip.status == 'planned' and trip.seats_open > 0 %}
+  {% elif trip.visibility == 'public' and trip.status == 'planned' and trip.seats_open > 0 %}
     <div class="panel">
       <h3>Request to join</h3>
       <p class="meta">The owner accepts or declines. No personal contact details are shared until they accept.</p>
@@ -66,6 +78,6 @@
       </form>
     </div>
   {% else %}
-    <p class="empty-note">This trip is not open to join requests.</p>
+    <p class="empty-note">{% if trip.visibility == 'public' and trip.status == 'planned' %}This trip is full: no seats left.{% else %}This trip is not open to join requests.{% endif %}</p>
   {% endif %}
 {% endblock %}

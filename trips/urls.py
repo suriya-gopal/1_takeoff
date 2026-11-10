@@ -22,12 +22,15 @@ urlpatterns = [
     path("trips/generic/", views.TripListView.as_view(), name="trip-list-generic"),
     path("trips/<int:pk>/", views.TripDetailView.as_view(), name="trip-detail"),
     path("trips/<int:pk>/budget/", budget.trip_budget_page, name="trip-budget"),
+    path("profile/", views.my_profile, name="my-profile"),
+    path("trips/<int:pk>/requests/<int:request_id>/decide/", views.decide_join_request, name="decide-join-request"),
 
     # Search and plan-a-trip form
     path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
     path("trips/<int:pk>/days/", ai_views.day_plan, name="day-plan"),
     path("trips/<int:pk>/places/", ai_views.place_suggestions, name="place-suggestions"),
     path("trips/<int:pk>/packing/", ai_views.packing_list, name="packing-list"),
+    path("trips/<int:pk>/packing/tick/", ai_views.packing_tick, name="packing-tick"),
     path("trips/<int:pk>/ask/", ai_views.ask_trip, name="ask-trip"),
     path("trips/new/", views.TripCreateView.as_view(), name="trip-create"),
 

@@ -1,0 +1,2 @@
+{# A traveler's name with the verified tick. Usage: {% include "trips/_traveler.html" with t=trip.owner %} #}
+<span class="traveler-name">{{ t.display_name }}</span>{% if t.is_domain_verified %}<span class="verified-tick" title="Verified: signed up with a university or company email" aria-label="verified">&#10003;</span>{% endif %}

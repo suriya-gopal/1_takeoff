@@ -7,15 +7,19 @@ from io import BytesIO
 import matplotlib
 matplotlib.use("Agg")  # draw to memory only; a server has no display
 import matplotlib.pyplot as plt
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template import loader
 from django.utils.dateparse import parse_date
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView
 from matplotlib.ticker import MaxNLocator
 
@@ -26,27 +30,41 @@ from .models import Destination, ItineraryItem, JoinRequest, Traveler, Trip
 
 def visible_trips(user):
     """
-    Trips a signed-in user may open: every public trip plus their own private ones.
+    Trips a signed-in user may open: every public trip, their own private ones, and private trips
+    they co-own because the owner accepted their request to join.
 
     Private trips belong to their owner, so another traveler gets a 404 for them, the same answer
     as for a trip that does not exist.
     """
-    return Trip.objects.filter(Q(visibility=Trip.PUBLIC) | Q(owner__user=user))
+    return Trip.objects.filter(
+        Q(visibility=Trip.PUBLIC)
+        | Q(owner__user=user)
+        # Accepted companions are co-owners and can open the trip even if it is private.
+        | Q(join_requests__requester__user=user, join_requests__status=JoinRequest.ACCEPTED)
+    ).distinct()
 
 
-def destination_popularity():
+def destination_popularity(user=None):
     """
     Destinations ranked by how many trips visit them.
 
     Shared by the home page, the search summaries, the insights charts and the API so
-    their numbers always agree.
+    their numbers always agree. Counts follow the same rule as the trip lists:
+    n_public counts public trips; n_trips counts the trips `user` can open (public trips plus
+    their own private ones), which is n_public again when no one is signed in. Other members'
+    private trips are never counted, so no page reveals that they exist.
     """
+    can_see = Q(stops__trip__visibility=Trip.PUBLIC)
+    if user is not None and user.is_authenticated:
+        can_see |= Q(stops__trip__owner__user=user)
+        can_see |= Q(stops__trip__join_requests__requester__user=user,
+                     stops__trip__join_requests__status=JoinRequest.ACCEPTED)
     return (
         Destination.objects
         # Destination <- TripStop <- Trip: 'stops__trip' spans two relationships. distinct=True
         # because the join can repeat a trip and each trip should be counted once.
         .annotate(
-            n_trips=Count("stops__trip", distinct=True),
+            n_trips=Count("stops__trip", filter=can_see, distinct=True),
             n_public=Count("stops__trip", filter=Q(stops__trip__visibility=Trip.PUBLIC), distinct=True),
         )
         .filter(n_trips__gt=0)  # hide cities nobody has planned to visit
@@ -64,7 +82,7 @@ def home(request):
         .select_related("owner")
         .prefetch_related("stops__destination")[:6]
     )
-    return render(request, "trips/home.html", {"trips": trips, "popular": destination_popularity()[:4]})
+    return render(request, "trips/home.html", {"trips": trips, "popular": destination_popularity(request.user)[:4]})
 
 
 def trip_manual_view(request):
@@ -90,6 +108,66 @@ class TripListView(ListView):
     queryset = Trip.objects.filter(visibility=Trip.PUBLIC)
 
 
+@login_required
+def my_profile(request):
+    """The signed-in member's own page: profile details, their trips and their join requests both ways."""
+    me = Traveler.for_user(request.user)
+    trips = me.trips.select_related("owner").prefetch_related("stops__destination")
+    co_owned = (
+        Trip.objects.filter(join_requests__requester=me, join_requests__status=JoinRequest.ACCEPTED)
+        .select_related("owner").prefetch_related("stops__destination")
+    )
+    sent = JoinRequest.objects.filter(requester=me).select_related("trip").order_by("-requested_at")
+    received = (
+        JoinRequest.objects.filter(trip__owner=me).select_related("trip", "requester").order_by("-requested_at")
+    )
+    return render(request, "trips/traveler_profile.html", {
+        "traveler": me, "trips": trips, "co_owned": co_owned, "sent": sent, "received": received,
+        "pending_count": sum(1 for r in received if r.status == JoinRequest.PENDING),
+    })
+
+
+@login_required
+@require_POST
+def decide_join_request(request, pk, request_id):
+    """
+    The trip owner approves or rejects one pending request.
+
+    Approving takes one open seat and makes the requester a co-owner (they can open the trip and use
+    its planning tools). The trip row is locked while seats are counted so two approvals at the same
+    moment cannot both take the last seat.
+    """
+    me = Traveler.for_user(request.user)
+    trip = get_object_or_404(Trip, pk=pk, owner=me)         # only the owner decides; anyone else gets 404
+    decision = request.POST.get("decision")
+    if decision not in ("approve", "reject"):
+        return HttpResponseBadRequest("Unknown decision.")
+    with transaction.atomic():
+        trip = Trip.objects.select_for_update().get(pk=trip.pk)
+        join = get_object_or_404(JoinRequest.objects.select_related("requester"), pk=request_id, trip=trip)
+        name = join.requester.display_name
+        if join.status != JoinRequest.PENDING:
+            messages.info(request, f"{name}'s request was already {join.get_status_display().lower()}.")
+        elif decision == "reject":
+            join.status = JoinRequest.DECLINED
+            join.save(update_fields=["status"])
+            messages.success(request, f"You rejected {name}'s request.")
+        elif trip.seats_open < 1:
+            messages.error(request, f"No seats left on this trip, so {name} cannot be approved. Reject the "
+                                    "request or open another seat first.")
+        else:
+            join.status = JoinRequest.ACCEPTED
+            join.save(update_fields=["status"])
+            trip.seats_open -= 1
+            trip.save(update_fields=["seats_open"])
+            messages.success(request, f"{name} is now a co-owner of this trip. "
+                                      f"{trip.seats_open} seat{'s' if trip.seats_open != 1 else ''} left.")
+    target = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        target = trip.get_absolute_url()
+    return redirect(target)
+
+
 def itinerary_by_day(trip):
     """The trip's itinerary items grouped by day, each day in time order: [(day_number, [items])]."""
     items = ItineraryItem.objects.filter(stop__trip=trip).select_related("stop__destination")
@@ -108,15 +186,24 @@ class TripDetailView(LoginRequiredMixin, View):
     """
 
     def _render(self, request, trip, form, status=200):
+        me = Traveler.for_user(request.user)
+        is_owner = trip.owner == me
+        co_owners = list(trip.co_owners())
+        is_co_owner = me in co_owners
         return render(
             request,
             "trips/trip_detail.html",
             {
                 "trip": trip,
                 "stops": trip.stops.all(),
-                "is_owner": trip.owner == Traveler.for_user(request.user),
+                "is_owner": is_owner,
+                "is_co_owner": is_co_owner,
+                "can_plan": is_owner or is_co_owner,
+                "co_owners": co_owners,
                 "item_days": itinerary_by_day(trip),
-                "join_requests": trip.join_requests.all(),
+                # Who asked to join is the owner's business only; other members just see the form.
+                "join_requests": trip.join_requests.select_related("requester") if is_owner or is_co_owner else [],
+                "my_request": None if is_owner else trip.join_requests.filter(requester=me).first(),
                 "form": form,
             },
             status=status,
@@ -247,13 +334,17 @@ class TripSearchView(LoginRequiredMixin, ListView):
             countries=Destination.objects.order_by("country").values_list("country", flat=True).distinct(),
         )
 
-        # Totals and grouped summaries shown under the results.
-        ctx["total_trips"] = Trip.objects.count()
+        # Totals and grouped summaries shown under the results. They count only what this member can
+        # open (the same trips as the "All trips" page), never other members' private trips.
+        user = self.request.user
+        visible = visible_trips(user)
+        requests = JoinRequest.objects.filter(trip__in=visible)
+        ctx["total_trips"] = visible.count()
         ctx["public_trips"] = Trip.objects.filter(visibility=Trip.PUBLIC).count()
-        ctx["total_requests"] = JoinRequest.objects.count()
-        ctx["trips_per_destination"] = destination_popularity()
+        ctx["total_requests"] = requests.count()
+        ctx["trips_per_destination"] = destination_popularity(user)
         ctx["requests_per_status"] = (
-            JoinRequest.objects.values("status").annotate(n=Count("request_id")).order_by("status")
+            requests.values("status").annotate(n=Count("request_id")).order_by("status")
         )
         return ctx
 
@@ -264,20 +355,20 @@ class TripSearchView(LoginRequiredMixin, ListView):
 @login_required
 def trips_by_destination_chart(request):
     """
-    GET /charts/trips-by-destination.png — public and private trips per destination as a PNG.
+    GET /charts/trips-by-destination.png — public trips and your own private trips per destination as a PNG.
 
     The image is drawn into an in-memory buffer, so nothing is written to disk, and the figure is
     closed afterwards to release its memory.
     """
-    rows = list(destination_popularity())
+    rows = list(destination_popularity(request.user))
     labels = [d.name for d in rows]
     public = [d.n_public for d in rows]
     private = [d.n_trips - d.n_public for d in rows]
 
     fig, ax = plt.subplots(figsize=(7, 3.6), dpi=130)
     if rows:
-        ax.bar(labels, public, color="#18a0f0", label="Public (community)")
-        ax.bar(labels, private, bottom=public, color="#ffb62d", label="Private")
+        ax.bar(labels, public, color="#1f3a68", label="Public (community)")
+        ax.bar(labels, private, bottom=public, color="#9fb6d3", label="Your private trips")
         ax.legend(frameon=False, fontsize=8)
     else:
         ax.text(0.5, 0.5, "No trips yet", ha="center", va="center", transform=ax.transAxes)

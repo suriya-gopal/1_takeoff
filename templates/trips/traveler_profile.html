@@ -1,0 +1,62 @@
+{% extends "trips/base.html" %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+  <div class="profile-head">
+    <span class="avatar large" aria-hidden="true">{{ traveler.display_name|slice:":1"|upper }}</span>
+    <div>
+      <h2 class="section-title">{{ traveler.display_name }}{% if traveler.is_domain_verified %}<span class="verified-tick large" title="Verified" aria-label="verified">&#10003;</span>{% endif %}</h2>
+      <p class="meta">
+        {% if traveler.is_domain_verified %}Verified traveler: signed up with a university or company email{% else %}Not verified: sign up with a university or company email to get the tick{% endif %}
+        &middot; Member since {{ traveler.joined_on|date:"F Y" }}{% if traveler.home_city %} &middot; Based in {{ traveler.home_city.name }}, {{ traveler.home_city.country }}{% endif %}
+      </p>
+    </div>
+  </div>
+  {% if traveler.bio %}<div class="panel"><p>{{ traveler.bio }}</p></div>{% endif %}
+
+  <div class="stats">
+    <div class="stat-chip"><strong>{{ trips|length }}</strong><span>my trips</span></div>
+    <div class="stat-chip"><strong>{{ sent|length }}</strong><span>requests I sent</span></div>
+    <div class="stat-chip"><strong>{{ pending_count }}</strong><span>waiting for my answer</span></div>
+  </div>
+
+  <h3 class="section-title">My trips</h3>
+  <div class="trip-grid">
+    {% for trip in trips %}
+      {% include "trips/_trip_card.html" %}
+    {% empty %}
+      <p class="empty-note">You have not planned a trip yet. <a href="{% url 'trips:trip-create' %}">Plan one</a>.</p>
+    {% endfor %}
+  </div>
+
+  {% if co_owned %}
+    <h3 class="section-title">Trips I co-own</h3>
+    <div class="trip-grid">
+      {% for trip in co_owned %}{% include "trips/_trip_card.html" %}{% endfor %}
+    </div>
+  {% endif %}
+
+  <h3 class="section-title">Requests to join my trips</h3>
+  {% for jr in received %}
+    <div class="panel request">
+      <p><strong>{% include "trips/_traveler.html" with t=jr.requester %}</strong> wants to join
+         <a href="{{ jr.trip.get_absolute_url }}">{{ jr.trip.title }}</a>
+         <span class="badge status-{{ jr.status }}">{{ jr.get_status_display }}</span></p>
+      {% if jr.message %}<p class="meta">&ldquo;{{ jr.message }}&rdquo;</p>{% endif %}
+      <p class="meta">Requested {{ jr.requested_at|date:"M j, Y" }}</p>
+      {% include "trips/_decide_buttons.html" with next=request.path %}
+    </div>
+  {% empty %}
+    <p class="empty-note">No one has asked to join your trips yet.</p>
+  {% endfor %}
+
+  <h3 class="section-title">Trips I asked to join</h3>
+  {% for jr in sent %}
+    <div class="panel request">
+      <p><a href="{{ jr.trip.get_absolute_url }}">{{ jr.trip.title }}</a>
+         <span class="badge status-{{ jr.status }}">{{ jr.get_status_display }}</span></p>
+      <p class="meta">Requested {{ jr.requested_at|date:"M j, Y" }}</p>
+    </div>
+  {% empty %}
+    <p class="empty-note">You have not asked to join a trip yet. Browse <a href="{% url 'trips:trip-list-generic' %}">community trips</a>.</p>
+  {% endfor %}
+{% endblock %}

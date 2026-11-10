@@ -1,0 +1,9 @@
+{# Approve / Reject for a pending join request (owner only). Usage: include with jr=... next=... #}
+{% if jr.status == "pending" %}
+  <form method="post" action="{% url 'trips:decide-join-request' jr.trip_id jr.pk %}" class="decide-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" name="decision" value="approve" class="approve">Approve</button>
+    <button type="submit" name="decision" value="reject" class="reject">Reject</button>
+  </form>
+{% endif %}

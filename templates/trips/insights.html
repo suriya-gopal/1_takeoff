@@ -24,7 +24,7 @@
   <h3 class="section-title">The numbers behind the charts</h3>
   <div class="table-wrap">
     <table class="data">
-      <thead><tr><th>Destination</th><th class="num">Community trips</th><th class="num">All trips</th></tr></thead>
+      <thead><tr><th>Destination</th><th class="num">Community trips</th><th class="num">Trips you can see</th></tr></thead>
       <tbody>
         {% for d in rows %}
           <tr><td>{{ d.name }}, {{ d.country }}</td><td class="num">{{ d.n_public }}</td><td class="num">{{ d.n_trips }}</td></tr>

@@ -38,7 +38,9 @@
         <a href="{% url 'trips:insights' %}">Insights</a>
         <a href="{% url 'trips:reports' %}">Reports</a>
         <a class="cta" href="{% url 'trips:trip-create' %}">+ Plan a trip</a>
-        <span class="nav-user">Hi, {{ user.get_short_name|default:user.username }}</span>
+        <a class="nav-profile" href="{% url 'trips:my-profile' %}" title="My profile ({{ user.username }})" aria-label="My profile">
+          <span class="avatar">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span>{% if user.traveler.is_domain_verified %}<span class="avatar-tick" aria-hidden="true">&#10003;</span>{% endif %}
+        </a>
         <form class="nav-logout" method="post" action="{% url 'trips:logout' %}">
           {% csrf_token %}
           <button type="submit">Log out</button>
@@ -50,6 +52,11 @@
     </div>
   </nav>
   <main>
+    {% if messages %}
+      <div class="flash-messages" role="status">
+        {% for message in messages %}<p class="flash {{ message.tags }}">{{ message }}</p>{% endfor %}
+      </div>
+    {% endif %}
     {% block send_search %}{% endblock %}
     {% block filter %}{% endblock %}
     {% block content %}{% endblock %}

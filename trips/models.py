@@ -188,6 +188,14 @@ class Trip(models.Model):
         blank=True,
     )
 
+    def co_owners(self):
+        """Travelers whose request to join was accepted. They plan the trip with the owner."""
+        return Traveler.objects.filter(join_requests__trip=self, join_requests__status=JoinRequest.ACCEPTED)
+
+    def can_plan(self, traveler):
+        """The owner and accepted companions may use the planning tools (drafts, places)."""
+        return traveler == self.owner or self.co_owners().filter(pk=traveler.pk).exists()
+
     class Meta:
         # Soonest departures first — what a "my trips" list should show.
         ordering = ["start_date", "title"]
@@ -405,3 +413,28 @@ class JoinRequest(models.Model):
 
     def __str__(self):
         return f"{self.requester.display_name} -> {self.trip.title} ({self.status})"
+
+
+class PackingTick(models.Model):
+    """
+    One ticked item on a member's packing list for a trip.
+
+    The list itself is generated (and cached) from the trip, so only the ticks are stored: one row
+    per (trip, traveler, item text). Unticking deletes the row. Ticks are per traveler, so companions
+    on a public trip each keep their own checklist.
+    """
+
+    tick_id = models.AutoField(primary_key=True)
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="packing_ticks")
+    traveler = models.ForeignKey(Traveler, on_delete=models.CASCADE, related_name="packing_ticks")
+    item = models.CharField(max_length=120)
+    ticked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["trip", "item"]
+        constraints = [
+            models.UniqueConstraint(fields=["trip", "traveler", "item"], name="one_tick_per_item"),
+        ]
+
+    def __str__(self):
+        return f"{self.traveler.display_name}: {self.item} ({self.trip})"

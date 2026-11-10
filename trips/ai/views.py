@@ -2,11 +2,12 @@
 
 from django import forms
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 
-from ..models import Traveler, Trip
+from ..models import ItineraryItem, PackingTick, Traveler, Trip
 from ..views import visible_trips
 from . import ask, guardrails, itinerary, model, remote, retrieval, suggestions, verify
 
@@ -30,9 +31,9 @@ class DayPlanForm(forms.Form):
 
 
 def owned_trip(request, pk):
-    """The trip, if it belongs to the signed-in member; anyone else gets a 404."""
+    """The trip, if the signed-in member owns or co-owns it (accepted companion); anyone else gets a 404."""
     trip = get_object_or_404(Trip, pk=pk)
-    if trip.owner != Traveler.for_user(request.user):
+    if not trip.can_plan(Traveler.for_user(request.user)):
         raise Http404
     return trip
 
@@ -168,9 +169,14 @@ def place_suggestions(request, pk):
                 error, status = "The assistant could not come up with suggestions this time. Please try again.", 502
 
     places = saved.get("places") or []
+    # Suggestions already on the itinerary are not offered again, so "+ Add" makes a card disappear.
+    added = set(
+        ItineraryItem.objects.filter(stop=stop, category=category).values_list("title", flat=True)
+    ) if stop is not None else set()
     shown = [
         (i, p) for i, p in enumerate(places)
-        if (request.GET.get("free") != "1" or p["free"]) and (request.GET.get("gems") != "1" or p["hidden_gem"])
+        if p["name"][: guardrails.MAX_ITEM_LENGTH] not in added
+        and (request.GET.get("free") != "1" or p["free"]) and (request.GET.get("gems") != "1" or p["hidden_gem"])
     ] if stop is not None and saved.get("stop_id") == stop.pk else []
     return render(request, "trips/place_suggestions.html", {
         "trip": trip, "stops": stops, "stop": stop, "category": category, "categories": suggestions.CATEGORIES,
@@ -193,7 +199,29 @@ def packing_list(request, pk):
             items = suggestions.packing_list(trip)
         except remote.ApiFailed:
             error, status = "The assistant could not put a list together this time. Please try again.", 502
+    ticked = set(PackingTick.objects.filter(trip=trip, traveler=Traveler.for_user(request.user))
+                 .values_list("item", flat=True))
+    items = [dict(entry, ticked=entry["item"][:PACKING_ITEM_LENGTH] in ticked) for entry in items]
     return render(request, "trips/packing_list.html", {"trip": trip, "items": items, "error": error}, status=status)
+
+
+PACKING_ITEM_LENGTH = 120   # PackingTick.item
+
+
+@login_required
+@require_POST
+def packing_tick(request, pk):
+    """Save one tick or untick on the packing list (called by the checkboxes as they change)."""
+    trip = get_object_or_404(visible_trips(request.user), pk=pk)
+    item = guardrails.clean_text(request.POST.get("item", ""), PACKING_ITEM_LENGTH)
+    if not item:
+        return JsonResponse({"ok": False, "error": "No item given."}, status=400)
+    traveler = Traveler.for_user(request.user)
+    if request.POST.get("checked") == "1":
+        PackingTick.objects.get_or_create(trip=trip, traveler=traveler, item=item)
+    else:
+        PackingTick.objects.filter(trip=trip, traveler=traveler, item=item).delete()
+    return JsonResponse({"ok": True, "item": item, "checked": request.POST.get("checked") == "1"})
 
 
 class AskForm(forms.Form):

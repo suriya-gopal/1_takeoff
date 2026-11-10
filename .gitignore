@@ -38,3 +38,6 @@ htmlcov/
 hf_cache/
 llm-test/**/.ipynb_checkpoints/
 docs/demo_script.md
+
+# Local test logs
+test_output.txt

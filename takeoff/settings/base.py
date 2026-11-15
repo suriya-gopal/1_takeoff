@@ -154,3 +154,10 @@ AI_API_BASE_URL = env('AI_API_BASE_URL', default='')       # empty = the OpenAI 
 AI_API_MODEL = env('AI_API_MODEL', default='')
 AI_API_TIMEOUT_SECONDS = env.int('AI_API_TIMEOUT_SECONDS', default=30)
 AI_API_REQUESTS_PER_HOUR = env.int('AI_API_REQUESTS_PER_HOUR', default=30)
+
+# AI usage dashboard: what a request is costed at (see trips/ai/telemetry.py).
+# On-device model: the hourly price of the server it runs on (AWS g4dn.xlarge, on-demand, us-east-1).
+AI_SERVER_COST_PER_HOUR = env.float('AI_SERVER_COST_PER_HOUR', default=0.526)
+# Hosted model: price per million tokens (defaults match Gemini 3.1 Flash-Lite; set these to your provider's).
+AI_API_PRICE_IN_PER_M = env.float('AI_API_PRICE_IN_PER_M', default=0.25)
+AI_API_PRICE_OUT_PER_M = env.float('AI_API_PRICE_OUT_PER_M', default=1.50)

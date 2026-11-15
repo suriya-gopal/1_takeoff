@@ -275,3 +275,17 @@ nav.subnav a.nav-auth + a.cta { margin-left: 0; }
 .flash.error { background: #fbeceb; border-color: #e3b5ae; color: #8a2b20; }
 .flash.info { background: #eef4fb; border-color: #c6d8ee; color: var(--navy); }
 .notice { background: #eef4fb; border: 1px solid #c6d8ee; border-radius: var(--radius); padding: .6rem .9rem; color: var(--navy); font-size: .9rem; }
+
+/* AI usage dashboard */
+.dash-filters { display: flex; flex-wrap: wrap; gap: .8rem; align-items: flex-end; }
+.dash-filters label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; color: var(--muted); font-weight: 600; }
+.panel.notice { background: var(--community); border-color: var(--sun); font-size: .92rem; }
+.dash-section { margin-bottom: 2rem; }
+.dash-section h4 { margin: 1.2rem 0 .4rem; color: var(--navy); }
+.dash-grid { display: grid; grid-template-columns: 1fr; gap: 0 1rem; margin-top: .6rem; }
+.dash-grid .widget { margin: .5rem 0; min-width: 0; }
+.dash-grid .widget h4 { margin: 0 0 .5rem; font-size: 1rem; }
+.dash-grid .chart-canvas { min-height: 220px; }
+@media (min-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr 1fr; }
+}

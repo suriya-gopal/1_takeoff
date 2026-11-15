@@ -3,7 +3,7 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from . import accounts, budget, charts, exports, reports, views
+from . import accounts, budget, charts, dashboard, exports, reports, views
 from .ai import views as ai_views
 
 app_name = "trips"
@@ -39,6 +39,11 @@ urlpatterns = [
     path("insights/specs/destinations.json", charts.destination_chart_json, name="chart-spec-destinations"),
     path("insights/specs/departures.json", charts.departure_chart_json, name="chart-spec-departures"),
     path("charts/trips-by-destination.png", views.trips_by_destination_chart, name="chart-trips-by-destination"),
+
+    # AI usage dashboard
+    path("dashboard/", dashboard.dashboard_page, name="dashboard"),
+    path("dashboard/charts.json", dashboard.dashboard_charts_json, name="dashboard-charts"),
+    path("api/dashboard/summary/", dashboard.api_dashboard_summary, name="api-dashboard-summary"),
 
     # Reports and downloads
     path("reports/", reports.ReportsView.as_view(), name="reports"),

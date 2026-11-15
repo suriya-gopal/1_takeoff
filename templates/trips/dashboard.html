@@ -1,0 +1,148 @@
+{% extends "trips/base.html" %}
+{% load static %}
+{% block title %}AI usage{% endblock %}
+{% block content %}
+  <h2 class="section-title">AI usage</h2>
+  <p class="meta">How TakeOff's AI features perform, how members use them and what they cost. Every chart answers the question written above it.</p>
+
+  <form class="panel dash-filters" method="get" action="{% url 'trips:dashboard' %}">
+    <label>Period
+      <select name="days">
+        {% for value, label in ranges %}<option value="{{ value }}"{% if filters.days == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Feature
+      <select name="feature">
+        <option value="">All features</option>
+        {% for value, label in features %}<option value="{{ value }}"{% if filters.feature == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Data
+      <select name="data">
+        <option value="">All records</option>
+        <option value="real"{% if filters.real_only %} selected{% endif %}>Real use and evaluation runs only</option>
+      </select>
+    </label>
+    <button type="submit">Update</button>
+    <a class="button secondary" href="{{ summary_url }}">JSON</a>
+  </form>
+
+  {% if summary.origins.simulated %}
+    <p class="panel notice" role="note">
+      This view includes <strong>{{ summary.origins.simulated }} simulated</strong> request{{ summary.origins.simulated|pluralize }}
+      next to {{ summary.origins.live }} from live use and {{ summary.origins.evaluation }} from evaluation runs.
+      Simulated records are sample data for demonstration; choose "Real use and evaluation runs only" to leave them out.
+    </p>
+  {% endif %}
+
+  {% if not has_data %}
+    <p class="panel"><em>No AI requests in this period yet. Ask a question on a trip page or load sample data with
+      <code>python manage.py seed_ai_usage</code>.</em></p>
+  {% else %}
+
+  {% for section in sections %}
+    <section class="dash-section" id="{{ section.id }}">
+      <h3 class="section-title">{{ section.title }}</h3>
+      <p class="meta">{{ section.blurb }}</p>
+
+      {% if section.id == "performance" %}
+        <div class="stats" aria-label="Performance summary">
+          <div class="stat-chip"><strong>{{ summary.latency.mean|default_if_none:"-" }} s</strong><span>mean response time</span></div>
+          <div class="stat-chip"><strong>{{ summary.latency.median|default_if_none:"-" }} s</strong><span>median</span></div>
+          <div class="stat-chip"><strong>{{ summary.latency.p95|default_if_none:"-" }} s</strong><span>95th percentile</span></div>
+          <div class="stat-chip"><strong>{{ summary.latency.spread_pct|default_if_none:"-" }}%</strong><span>spread (std dev / mean)</span></div>
+          <div class="stat-chip"><strong>{{ summary.latency.outliers }}</strong><span>unusually slow requests</span></div>
+          <div class="stat-chip"><strong>{{ summary.ok_pct|default_if_none:"-" }}%</strong><span>answered without fallback</span></div>
+        </div>
+      {% elif section.id == "behavior" %}
+        <div class="stats" aria-label="Behavior summary">
+          <div class="stat-chip"><strong>{{ summary.requests }}</strong><span>requests</span></div>
+          <div class="stat-chip"><strong>{{ summary.members }}</strong><span>active members</span></div>
+          <div class="stat-chip"><strong>{{ summary.requests_per_member|default_if_none:"-" }}</strong><span>requests per member</span></div>
+          <div class="stat-chip"><strong>{% if summary.top_topic %}{{ summary.top_topic.0 }}{% else %}-{% endif %}</strong><span>top question topic</span></div>
+          <div class="stat-chip"><strong>{{ summary.not_covered_pct|default_if_none:"-" }}%</strong><span>questions the guides do not cover</span></div>
+          <div class="stat-chip"><strong>{{ summary.refused_pct|default_if_none:"-" }}%</strong><span>refused or rate limited</span></div>
+        </div>
+      {% else %}
+        <div class="stats" aria-label="Cost summary">
+          <div class="stat-chip"><strong>${{ summary.cost.total }}</strong><span>total estimated cost</span></div>
+          <div class="stat-chip"><strong>${{ summary.cost.per_request|default_if_none:0|floatformat:5 }}</strong><span>per request</span></div>
+          <div class="stat-chip"><strong>{{ summary.cost.mean_tokens|default_if_none:"-" }}</strong><span>tokens per request</span></div>
+          <div class="stat-chip"><strong>${{ summary.cost.per_1k_tokens|default_if_none:0|floatformat:4 }}</strong><span>per 1,000 tokens</span></div>
+          <div class="stat-chip"><strong>${{ summary.cost.per_month|default_if_none:0|floatformat:2 }}</strong><span>projected per 30 days</span></div>
+        </div>
+      {% endif %}
+
+      <div class="dash-grid">
+        {% for widget in section.widgets %}
+          <figure class="panel widget">
+            <h4>{{ widget.question }}</h4>
+            <div class="chart-canvas" data-dash-chart="{{ widget.chart }}" role="img" aria-label="{{ widget.question }}"></div>
+            <figcaption class="meta">{{ widget.note }}</figcaption>
+          </figure>
+        {% endfor %}
+      </div>
+
+      {% if section.id == "performance" %}
+        <h4>Feature comparison</h4>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Feature</th><th class="num">Requests</th><th class="num">Mean s</th><th class="num">Median s</th><th class="num">95th pct s</th>
+              <th class="num">Spread</th><th class="num">Slow outliers</th><th class="num">r (input length vs time)</th></tr></thead>
+            <tbody>
+              {% for f in summary.by_feature %}
+                <tr><td>{{ f.feature }}</td><td class="num">{{ f.requests }}</td><td class="num">{{ f.mean_s }}</td><td class="num">{{ f.median_s }}</td>
+                  <td class="num">{{ f.p95_s }}</td><td class="num">{{ f.spread_pct|default_if_none:"-" }}{% if f.spread_pct is not None %}%{% endif %}</td>
+                  <td class="num">{{ f.outliers }}</td><td class="num">{{ f.r_input|default_if_none:"-" }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% elif section.id == "behavior" %}
+        <h4>Most common words in questions</h4>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Word</th><th class="num">Times asked</th></tr></thead>
+            <tbody>
+              {% for t in summary.common_terms %}<tr><td>{{ t.term }}</td><td class="num">{{ t.count }}</td></tr>
+              {% empty %}<tr><td colspan="2" class="muted"><em>No questions yet.</em></td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <h4>Ten most token-heavy requests</h4>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Day</th><th>Feature</th><th>Topic</th><th class="num">Tokens</th><th class="num">Seconds</th><th class="num">Est. cost</th></tr></thead>
+            <tbody>
+              {% for r in summary.heaviest %}
+                <tr><td>{{ r.date }}</td><td>{{ r.feature }}</td><td>{{ r.topic }}</td><td class="num">{{ r.tokens }}</td>
+                  <td class="num">{{ r.seconds }}</td><td class="num">${{ r.cost|floatformat:5 }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  <div class="panel">
+    <h3>How the numbers are worked out</h3>
+    <ul class="meta">
+      <li><strong>Response time</strong> is measured around the whole AI call. Requests that were refused or rate limited never reach the model and are left out of the timing and cost figures.</li>
+      <li><strong>Spread</strong> is the standard deviation divided by the mean; a low value means response times are consistent. <strong>Slow outliers</strong> are requests above Q3 + 1.5 x IQR.</li>
+      <li><strong>Cost</strong> is an estimate. The on-device model is priced by the seconds it ran on a GPU server (${{ server_cost_per_hour }} per hour); the hosted model by prompt and completion tokens at the provider's price per million tokens.</li>
+      <li><strong>Topics</strong> come from keywords in the question. Individual questions are never shown here.</li>
+    </ul>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% if has_data %}
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.33.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.23.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.29.0"></script>
+  <script src="{% static 'trips/js/dashboard.js' %}" data-charts-url="{{ charts_url }}"></script>
+  {% endif %}
+{% endblock %}

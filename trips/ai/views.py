@@ -9,7 +9,7 @@ from django.conf import settings
 
 from ..models import ItineraryItem, PackingTick, Traveler, Trip
 from ..views import visible_trips
-from . import ask, guardrails, itinerary, model, remote, retrieval, suggestions, verify
+from . import ask, guardrails, itinerary, model, remote, retrieval, suggestions, telemetry, verify
 
 SESSION_KEY = "day_draft_{}"
 SLOT_LABELS = {"morning": "Morning", "afternoon": "Afternoon", "evening": "Evening"}
@@ -73,13 +73,19 @@ def day_plan(request, pk):
 
     elif request.method == "POST" and form.is_valid():
         if not guardrails.allow_request(request.user.pk, settings.AI_DRAFTS_PER_HOUR):
+            telemetry.record(request, "day_plan", status="rate_limited", trip=trip)
             error, status = "You have reached the hourly limit for drafts. Please try again later.", 429
         else:
             try:
-                drafts = itinerary.draft_trip(
-                    trip, form.cleaned_data["interests"], form.cleaned_data["with_kids"],
-                )
-                drafts, place_check = refine_drafts(request, drafts)
+                with telemetry.track(request, "day_plan", text=form.cleaned_data["interests"], trip=trip) as call:
+                    try:
+                        drafts = itinerary.draft_trip(
+                            trip, form.cleaned_data["interests"], form.cleaned_data["with_kids"],
+                        )
+                    except model.ModelUnavailable:
+                        call.status = "unavailable"
+                        raise
+                drafts, place_check = refine_drafts(request, drafts, trip)
                 request.session[key] = itinerary.to_session(drafts)
                 request.session[key + "_check"] = place_check
             except model.ModelUnavailable as exc:
@@ -102,7 +108,7 @@ def day_plan(request, pk):
     )
 
 
-def refine_drafts(request, drafts):
+def refine_drafts(request, drafts, trip=None):
     """
     Have the hosted assistant check the places in a fresh draft, when it is set up.
 
@@ -112,8 +118,12 @@ def refine_drafts(request, drafts):
     if not remote.configured():
         return drafts, ""
     if not guardrails.allow_request(request.user.pk, settings.AI_API_REQUESTS_PER_HOUR, scope="api"):
+        telemetry.record(request, "place_check", status="rate_limited", runtime="hosted", trip=trip)
         return drafts, "unchecked"
-    return drafts, "checked" if verify.verify_drafts(drafts) else "unchecked"
+    with telemetry.track(request, "place_check", runtime="hosted", trip=trip) as call:
+        checked = verify.verify_drafts(drafts)
+        call.status = "ok" if checked else "failed"
+    return drafts, "checked" if checked else "unchecked"
 
 
 SUGGESTION_KEY = "place_suggestions_{}"
@@ -158,11 +168,15 @@ def place_suggestions(request, pk):
         if not form.is_valid() or chosen is None:
             error, status = "; ".join(e for errs in form.errors.values() for e in errs) or "Choose a city.", 400
         elif not guardrails.allow_request(request.user.pk, settings.AI_API_REQUESTS_PER_HOUR, scope="api"):
+            telemetry.record(request, "places", status="rate_limited", runtime="hosted", trip=trip)
             error, status = "You have reached the hourly limit. Please try again later.", 429
         else:
             stop, category = chosen, form.cleaned_data["category"]
             try:
-                places = suggestions.suggest_places(stop, category, form.cleaned_data["interests"], trip)
+                with telemetry.track(request, "places", runtime="hosted", text=form.cleaned_data["interests"],
+                                     trip=trip) as call:
+                    call.city = stop.destination.name
+                    places = suggestions.suggest_places(stop, category, form.cleaned_data["interests"], trip)
                 request.session[key] = {"stop_id": stop.pk, "category": category, "places": places}
                 saved = request.session[key]
             except remote.ApiFailed:
@@ -193,10 +207,12 @@ def packing_list(request, pk):
     if not remote.configured():
         error, status = "The packing list is not set up on this server.", 503
     elif not guardrails.allow_request(request.user.pk, settings.AI_API_REQUESTS_PER_HOUR, scope="api"):
+        telemetry.record(request, "packing", status="rate_limited", runtime="hosted", trip=trip)
         error, status = "You have reached the hourly limit. Please try again later.", 429
     else:
         try:
-            items = suggestions.packing_list(trip)
+            with telemetry.track(request, "packing", runtime="hosted", trip=trip):
+                items = suggestions.packing_list(trip)
         except remote.ApiFailed:
             error, status = "The assistant could not put a list together this time. Please try again.", 502
     ticked = set(PackingTick.objects.filter(trip=trip, traveler=Traveler.for_user(request.user))
@@ -255,14 +271,20 @@ def ask_trip(request, pk):
 
     if request.method == "POST" and not form.is_valid():
         status = 400
+        telemetry.record(request, "ask", status="refused", trip=trip, input_chars=len(request.POST.get("question", "")))
     elif request.method == "POST":
+        question = form.cleaned_data["question"]
         if not guardrails.allow_request(request.user.pk, settings.AI_ASK_PER_HOUR, scope="ask"):
+            telemetry.record(request, "ask", status="rate_limited", trip=trip, text=question)
             error, status = "You have reached the hourly limit for questions. Please try again later.", 429
         else:
-            try:
-                result = ask.answer_question(trip, form.cleaned_data["question"])
-            except retrieval.SearchUnavailable as exc:
-                error, status = str(exc), 503
+            with telemetry.track(request, "ask", text=question, trip=trip) as call:
+                try:
+                    result = ask.answer_question(trip, question)
+                    call.from_ask(result)
+                except retrieval.SearchUnavailable as exc:
+                    error, status = str(exc), 503
+                    call.status = "unavailable"
 
     return render(request, "trips/ask_trip.html", {
         "trip": trip, "form": form, "result": result, "error": error,

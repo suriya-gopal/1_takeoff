@@ -389,3 +389,73 @@ python manage.py check_local_model
 | `AI_DRAFTS_PER_HOUR` | `10` | Drafts per member per hour |
 
 Memory: roughly 3.5 GB for the model. It uses an NVIDIA GPU or Apple GPU when present, otherwise the CPU (slower).
+
+
+---
+
+## 3. Usage records and the AI usage dashboard
+
+Every call to an AI feature leaves one row in `AIRequest` (`trips/models.py`): the feature, the model, how long it
+took, the tokens used, an estimated cost, how it ended and, for "Ask about this trip", the cleaned question. The
+dashboard at `/dashboard/` (link "AI usage" in the navigation, signed-in members only) reads those rows.
+
+### 3.1 What it answers
+
+| Group | Question | Widget |
+|---|---|---|
+| Performance | How does response time vary, and how consistent is it? | Histogram, plus mean, median, 95th percentile and spread tiles |
+| | Which features are slower, and how much do they vary? | Box plot per feature, feature comparison table |
+| | Do longer inputs make responses slower? | Scatter with a trend line per feature, correlation (r) in the table |
+| | Is response time getting better or worse over time? | Daily median line per feature |
+| Behavior | What are members asking about most? | Topic bars, common-words table |
+| | Which cities do the questions concern? | City bars |
+| | How often are the features used? | Requests per day, stacked by feature; members and requests per member tiles |
+| | What kind of input do members give? | Question-length histogram |
+| | How often does a request end without a real answer? | Outcome shares per feature |
+| Cost | What does a request cost, and which feature costs most? | Cost per 1,000 requests with 95% confidence whiskers |
+| | Which kinds of requests use the most tokens? | Prompt and completion tokens by feature and topic, top-10 table |
+| | How is spend building up? | Cumulative cost, monthly projection tile |
+
+Filters (period, feature, real or all data) are plain query parameters, so a filtered view can be bookmarked:
+`/dashboard/?days=7&feature=ask&data=real`. The same numbers are available as JSON at `/api/dashboard/summary/`
+and the chart definitions with their data at `/dashboard/charts.json` (both need a signed-in session).
+
+### 3.2 How a request is recorded
+
+| File | Role |
+|---|---|
+| `trips/ai/telemetry.py` | `track()` times the call and saves the row; `record()` saves refused and rate-limited requests; topic and cost helpers |
+| `trips/ai/usage.py` | Per-thread token counter that `model.py` and `remote.py` report into |
+| `trips/ai/views.py` | The AI pages wrap their model calls in `telemetry.track(...)` |
+| `trips/dashboard.py` | Filters, statistics, chart definitions, the three views |
+| `templates/trips/dashboard.html`, `trips/static/trips/js/dashboard.js` | The page and the code that draws the charts |
+
+* **Response time** is measured around the whole call (search plus generation for questions). Refused and rate-limited
+  requests never reach a model and are left out of timing and cost figures.
+* **Tokens** come from the model clients. When a model reports none, they are estimated at four characters per token
+  and the row is marked `tokens_measured = False`.
+* **Cost** is an estimate: the on-device model is priced by the seconds it ran on a GPU server
+  (`AI_SERVER_COST_PER_HOUR`, default 0.526 USD, the AWS g4dn.xlarge price in `notes.txt`); the hosted model by
+  tokens at `AI_API_PRICE_IN_PER_M` / `AI_API_PRICE_OUT_PER_M` (defaults match Gemini 3.1 Flash-Lite in `notes.txt`).
+* **Topics** come from keywords in the question (`telemetry.TOPICS`). Individual questions are never shown on the
+  dashboard, only counts, topics and the most common words across all members.
+* A problem while saving a row is logged and ignored; it never breaks the AI page.
+
+### 3.3 Sample data and test accounts
+
+A new install has no records. To see the dashboard filled:
+
+```bash
+python manage.py seed_ai_usage          # ~600 simulated requests over 45 days + the saved evaluation run
+python manage.py seed_ai_usage --clear  # remove them again
+```
+
+Records carry an `origin`: `live` (real use), `evaluation` (the cases in `docs/ai_eval/ask_eval.csv`, measured with
+the real models) or `simulated` (invented; speeds and sizes follow the measurements in `notes.txt`, nothing is a
+measurement of this server). The dashboard says when simulated records are included and can leave them out.
+
+Create or reset a member account on any server (the password is never stored in code):
+
+```bash
+python manage.py create_member <username> --password "<password>" --email <you@illinois.edu>
+```

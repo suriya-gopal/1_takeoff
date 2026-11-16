@@ -1,6 +1,6 @@
 """AI usage records and the AI usage dashboard: recording, statistics, filters, access and sample data."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 from io import StringIO
 from unittest import mock
@@ -223,8 +223,31 @@ class DashboardTests(SignedInMixin, TestCase):
     def test_empty_state(self):
         AIRequest.objects.all().delete()
         response = self.get()
-        self.assertContains(response, "No AI requests in this period yet")
+        self.assertContains(response, "No AI activity yet")
         self.assertNotContains(response, "data-dash-chart")
+
+    def test_filters_with_no_match_do_not_claim_there_is_no_activity(self):
+        AIRequest.objects.all().delete()
+        add_request(origin="simulated")
+        response = self.get("?days=0&data=real")
+        self.assertContains(response, "No requests match these filters")
+        self.assertNotContains(response, "No AI activity yet")
+
+    def test_common_words_follow_the_filters(self):
+        AIRequest.objects.all().delete()
+        add_request(origin="simulated", query_text="where to find museums")
+        add_request(origin="live", query_text="best pastries nearby")
+        terms = {t["term"] for t in self.summary("?days=0&data=real")["common_terms"]}
+        self.assertIn("pastries", terms)
+        self.assertNotIn("museums", terms)
+
+    def test_a_late_evening_request_is_counted_on_its_local_day(self):
+        AIRequest.objects.all().delete()
+        # 01:30 UTC on the 16th is 7:30pm on the 15th in Chicago.
+        add_request(created_at=datetime(2026, 11, 16, 1, 30, tzinfo=dt_timezone.utc))
+        row = dashboard.load_rows(dashboard.Filters({"days": "0"}))[0]
+        self.assertTrue(row["date"].startswith("2026-11-15"))
+        self.assertEqual(row["hour"], 19)
 
     def test_navigation_links_to_the_dashboard(self):
         self.assertContains(self.client.get(reverse("trips:home")), reverse("trips:dashboard"))

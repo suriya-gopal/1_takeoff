@@ -36,7 +36,11 @@
   {% endif %}
 
   {% if not has_data %}
-    <p class="panel"><em>No AI activity yet. Ask a question or build a draft on a trip page, and the numbers will appear here.</em></p>
+    {% if any_data %}
+      <p class="panel"><em>No requests match these filters. Try a longer period, another feature or "All records".</em></p>
+    {% else %}
+      <p class="panel"><em>No AI activity yet. Ask a question or build a draft on a trip page, and the numbers will appear here.</em></p>
+    {% endif %}
   {% else %}
 
   {% for section in sections %}

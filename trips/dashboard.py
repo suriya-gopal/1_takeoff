@@ -125,8 +125,8 @@ def load_rows(filters):
     for r in filters.queryset().order_by("-created_at")[:MAX_ROWS]:
         rows.append({
             "id": r.request_id,
-            "date": r.created_at.date().isoformat(),
-            "hour": r.created_at.hour,
+            "date": timezone.localtime(r.created_at).date().isoformat() + "T00:00:00",  # local day, read as local time by the charts
+            "hour": timezone.localtime(r.created_at).hour,
             "feature": r.feature,
             "feature_label": FEATURE_LABELS[r.feature],
             "runtime": r.runtime,
@@ -177,10 +177,10 @@ def feature_table(executed):
     return table
 
 
-def common_terms(limit=10):
-    """Most frequent words in members' questions (all members together; individual questions are never shown)."""
+def common_terms(filters, limit=10):
+    """Most frequent words in members' questions for the chosen view (all members together; individual questions are never shown)."""
     words = Counter()
-    for text in AIRequest.objects.filter(feature="ask").exclude(query_text="").values_list("query_text", flat=True):
+    for text in filters.queryset().filter(feature="ask").exclude(query_text="").values_list("query_text", flat=True):
         words.update(w for w in re.findall(r"[a-z]{4,}", text.lower()) if w not in STOP_WORDS)
     return [{"term": term, "count": count} for term, count in words.most_common(limit)]
 
@@ -226,11 +226,11 @@ def build_summary(rows, filters):
         },
         "by_feature": feature_table(executed),
         "heaviest": [
-            {"date": r["date"], "feature": r["feature_label"], "topic": r["topic_label"] or "-",
+            {"date": r["date"][:10], "feature": r["feature_label"], "topic": r["topic_label"] or "-",
              "tokens": r["total_tokens"], "seconds": r["latency_s"], "cost": r["cost_usd"]}
             for r in sorted(executed, key=lambda r: -r["total_tokens"])[:10]
         ],
-        "common_terms": common_terms(),
+        "common_terms": common_terms(filters),
         "origins": {"live": origins["live"], "evaluation": origins["evaluation"], "simulated": origins["simulated"]},
     }
 
@@ -412,7 +412,7 @@ def dashboard_page(request):
         "filters": filters, "summary": summary, "sections": SECTIONS, "ranges": RANGES,
         "features": FEATURE_LABELS.items(), "charts_url": reverse("trips:dashboard-charts") + "?" + filters.query(),
         "summary_url": reverse("trips:api-dashboard-summary") + "?" + filters.query(),
-        "has_data": bool(rows), "server_cost_per_hour": settings.AI_SERVER_COST_PER_HOUR,
+        "has_data": bool(rows), "any_data": AIRequest.objects.exists(), "server_cost_per_hour": settings.AI_SERVER_COST_PER_HOUR,
     })
 
 

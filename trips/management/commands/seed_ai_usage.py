@@ -17,7 +17,7 @@ Two kinds of record are added, and each is labelled so the dashboard can tell th
 import csv
 import math
 import random
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         return existing
 
     def simulate(self, rng, days, per_day, travelers, trips):
-        now = timezone.now()
+        now = timezone.localtime()   # local time, so "weekday" and "daytime" mean Chicago time
         rows = []
         for back in range(days, -1, -1):
             day = now - timedelta(days=back)

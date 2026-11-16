@@ -1,0 +1,4 @@
+chunking,gold_hit_rate,mean_gold_rank,recall,context_quality,answer_quality,retrieval_ms,generation_s,prompt_tokens
+fixed,1.0,1.0,1.0,10.0,7.56,22.53,2.92,454.5
+overlap,1.0,1.04,1.0,10.0,7.19,15.72,3.91,850.79
+hybrid,1.0,1.04,1.0,10.0,5.88,18.0,2.43,503.75

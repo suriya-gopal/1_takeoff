@@ -188,6 +188,14 @@ class Trip(models.Model):
         blank=True,
     )
 
+    def co_owners(self):
+        """Travelers whose request to join was accepted. They plan the trip with the owner."""
+        return Traveler.objects.filter(join_requests__trip=self, join_requests__status=JoinRequest.ACCEPTED)
+
+    def can_plan(self, traveler):
+        """The owner and accepted companions may use the planning tools (drafts, places)."""
+        return traveler == self.owner or self.co_owners().filter(pk=traveler.pk).exists()
+
     class Meta:
         # Soonest departures first — what a "my trips" list should show.
         ordering = ["start_date", "title"]
@@ -405,3 +413,88 @@ class JoinRequest(models.Model):
 
     def __str__(self):
         return f"{self.requester.display_name} -> {self.trip.title} ({self.status})"
+
+
+class PackingTick(models.Model):
+    """
+    One ticked item on a member's packing list for a trip.
+
+    The list itself is generated (and cached) from the trip, so only the ticks are stored: one row
+    per (trip, traveler, item text). Unticking deletes the row. Ticks are per traveler, so companions
+    on a public trip each keep their own checklist.
+    """
+
+    tick_id = models.AutoField(primary_key=True)
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="packing_ticks")
+    traveler = models.ForeignKey(Traveler, on_delete=models.CASCADE, related_name="packing_ticks")
+    item = models.CharField(max_length=120)
+    ticked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["trip", "item"]
+        constraints = [
+            models.UniqueConstraint(fields=["trip", "traveler", "item"], name="one_tick_per_item"),
+        ]
+
+    def __str__(self):
+        return f"{self.traveler.display_name}: {self.item} ({self.trip})"
+
+
+class AIRequest(models.Model):
+    """
+    One call to an AI feature: who used what, how long it took, how many tokens it used and what it cost.
+
+    Rows are written by the AI pages (see trips/ai/telemetry.py) and read by the AI usage dashboard. The
+    member's question is kept only for "Ask about this trip", in its cleaned form, and is never shown
+    one by one: the dashboard only reports topics and counts.
+    """
+
+    FEATURES = [
+        ("ask", "Ask about this trip"),
+        ("day_plan", "Day-by-day draft"),
+        ("place_check", "Place check"),
+        ("places", "Place suggestions"),
+        ("packing", "Packing list"),
+    ]
+    STATUSES = [
+        ("ok", "Answered"),
+        ("no_match", "Not covered"),
+        ("fallback", "Sources only"),
+        ("refused", "Refused input"),
+        ("rate_limited", "Rate limited"),
+        ("unavailable", "Unavailable"),
+        ("failed", "Failed"),
+    ]
+    RUNTIMES = [("local", "On-device model"), ("hosted", "Hosted model")]
+    ORIGINS = [("live", "Live use"), ("evaluation", "Evaluation run"), ("simulated", "Simulated")]
+
+    request_id = models.AutoField(primary_key=True)
+    created_at = models.DateTimeField(db_index=True)
+    feature = models.CharField(max_length=20, choices=FEATURES)
+    runtime = models.CharField(max_length=10, choices=RUNTIMES, default="local")
+    model_name = models.CharField(max_length=120, blank=True)
+    traveler = models.ForeignKey(Traveler, null=True, blank=True, on_delete=models.SET_NULL, related_name="ai_requests")
+    trip = models.ForeignKey(Trip, null=True, blank=True, on_delete=models.SET_NULL, related_name="ai_requests")
+    status = models.CharField(max_length=20, choices=STATUSES, default="ok")
+    topic = models.CharField(max_length=30, blank=True)
+    city = models.CharField(max_length=80, blank=True)
+    query_text = models.CharField(max_length=300, blank=True)
+    input_chars = models.PositiveIntegerField(default=0)
+    latency_ms = models.PositiveIntegerField(default=0)
+    search_ms = models.PositiveIntegerField(null=True, blank=True)
+    prompt_tokens = models.PositiveIntegerField(default=0)
+    completion_tokens = models.PositiveIntegerField(default=0)
+    tokens_measured = models.BooleanField(default=False)
+    cost_usd = models.DecimalField(max_digits=12, decimal_places=8, default=0)
+    origin = models.CharField(max_length=12, choices=ORIGINS, default="live", db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["feature", "created_at"])]
+
+    @property
+    def total_tokens(self):
+        return self.prompt_tokens + self.completion_tokens
+
+    def __str__(self):
+        return f"{self.get_feature_display()} ({self.status}, {self.latency_ms} ms)"

@@ -10,6 +10,8 @@ import threading
 
 from django.conf import settings
 
+from . import usage
+
 GENERATION_SETTINGS = dict(do_sample=False, repetition_penalty=1.1)  # steady, repeatable output
 RETRY_SAMPLING = dict(do_sample=True, temperature=0.7, top_p=0.9)    # used when a retry needs variety
 
@@ -84,4 +86,5 @@ def generate_text(messages, max_new_tokens=400, sample=False):
                 **options,
             )
     new_tokens = output[0][inputs["input_ids"].shape[1]:]
+    usage.add(inputs["input_ids"].shape[1], len(new_tokens))
     return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()

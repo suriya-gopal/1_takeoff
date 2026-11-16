@@ -151,10 +151,11 @@ class SearchTests(TripDataTestCase):
 
     def test_aggregations_present(self):
         ctx = self.client.get(reverse("trips:trip-search")).context
-        self.assertEqual(ctx["total_trips"], 3)
+        self.assertEqual(ctx["total_trips"], 2)            # Bob sees the two public trips, not Alice's private one
         self.assertEqual(ctx["public_trips"], 2)
         rome = [d for d in ctx["trips_per_destination"] if d.name == "Rome"][0]
         self.assertEqual(rome.n_trips, 1)
+        self.assertNotIn("Lisbon", [d.name for d in ctx["trips_per_destination"]])
 
 
 class ChartTests(TripDataTestCase):

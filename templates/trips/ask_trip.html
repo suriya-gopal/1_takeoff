@@ -1,0 +1,47 @@
+{% extends "trips/base.html" %}
+{% block title %}Ask about this trip{% endblock %}
+{% block content %}
+  <h2 class="section-title">Ask about this trip &middot; {{ trip.title }}</h2>
+  <p class="meta">Questions are answered from TakeOff's travel guides for
+    {% for city in cities %}{{ city }}{% if not forloop.last %}, {% endif %}{% empty %}this trip's cities{% endfor %}.
+    Answers come from a small on-device model, so check anything important before you book.</p>
+
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+
+  <div class="panel">
+    <form method="post">
+      {% csrf_token %}
+      <div>{{ form.question.label_tag }} {{ form.question }} {{ form.question.errors }}</div>
+      <p><button type="submit">Ask</button> <span class="meta">Answering can take up to a minute.</span></p>
+    </form>
+  </div>
+
+  {% if result %}
+    {% if message %}<p class="form-error" role="status">{{ message }}</p>{% endif %}
+
+    {% if result.answer %}
+      <div class="panel" id="answer">
+        <h3>Answer</h3>
+        <p>{{ result.answer }}</p>
+        {% if result.unsupported %}
+          <p class="meta">Check this: the answer mentions {{ result.unsupported|join:", " }}, which does not appear in the guide passages below.</p>
+        {% endif %}
+        <p class="meta">Found in {{ result.search_ms }} ms &middot; written in {{ result.generate_s }} s</p>
+      </div>
+    {% endif %}
+
+    {% if result.sources %}
+      <h3 class="section-title">Sources from the guides</h3>
+      <p class="meta">Best match first.</p>
+      {% for source in result.sources %}
+        <div class="trip-card">
+          <p class="title">{{ source.city }} &middot; {{ source.topic }}</p>
+          <p class="meta">match {{ source.score|floatformat:2 }}</p>
+          <p>{{ source.body }}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+
+  <p><a class="button secondary" href="{{ trip.get_absolute_url }}">Back to trip</a></p>
+{% endblock %}

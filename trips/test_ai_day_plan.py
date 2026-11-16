@@ -19,6 +19,8 @@ def fake_reply(city="Rome", days=2):
         {"day": i + 1, "morning": f"Walk {i}", "afternoon": f"Museum {i}", "evening": f"Dinner {i}"} for i in range(days)]})
 
 
+# The hosted place check is switched off here so these tests never call a real API, whatever is in .env.
+@override_settings(AI_API_KEY="", AI_API_MODEL="")
 class DayPlanTests(TestCase):
     def setUp(self):
         cache.clear()

@@ -5,12 +5,31 @@
   <p class="meta">Based on your route, dates, typical weather for that time of year and what you have planned.</p>
   {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
   {% if items %}
-    <ul class="checklist">
+    <ul class="checklist" data-tick-url="{% url 'trips:packing-tick' trip.pk %}">
       {% for entry in items %}
-        <li><label><input type="checkbox"> <strong>{{ entry.item }}</strong> <span class="meta">&middot; {{ entry.reason }}</span></label></li>
+        <li><label><input type="checkbox" data-item="{{ entry.item }}"{% if entry.ticked %} checked{% endif %}> <strong>{{ entry.item }}</strong> <span class="meta">&middot; {{ entry.reason }}</span></label></li>
       {% endfor %}
     </ul>
-    <p class="meta">Tick items as you pack them. Ticks are not saved if you leave the page.</p>
+    <p class="meta" id="tick-status" role="status" aria-live="polite">Tick items as you pack them. Ticks are saved automatically.</p>
+    <script>
+      // Save each tick as it changes; undo the tick on screen if the save fails.
+      document.querySelectorAll(".checklist input[type=checkbox]").forEach(function (box) {
+        box.addEventListener("change", function () {
+          var list = box.closest(".checklist"), status = document.getElementById("tick-status");
+          var body = new URLSearchParams({item: box.dataset.item, checked: box.checked ? "1" : "0"});
+          fetch(list.dataset.tickUrl, {method: "POST", body: body, credentials: "same-origin",
+                                       headers: {"X-CSRFToken": "{{ csrf_token }}"}})
+            .then(function (r) {
+              if (!r.ok) throw new Error();
+              status.textContent = "Saved.";
+            })
+            .catch(function () {
+              box.checked = !box.checked;
+              status.textContent = "Could not save that tick. Please try again.";
+            });
+        });
+      });
+    </script>
   {% endif %}
   <p><a class="button secondary" href="{{ trip.get_absolute_url }}">Back to trip</a></p>
 {% endblock %}

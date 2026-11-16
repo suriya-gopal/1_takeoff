@@ -1,0 +1,7 @@
+torch>=2.4
+transformers>=4.56
+sentence-transformers>=3.0
+numpy>=1.26
+pandas>=2.2
+jupyter>=1.0
+ipykernel>=6.29

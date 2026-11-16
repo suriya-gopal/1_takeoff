@@ -7,7 +7,7 @@ Uses the `openai` package, which also talks to other providers that expose the s
 
 from django.conf import settings
 
-from . import guardrails
+from . import guardrails, usage
 
 ATTEMPTS = 2
 
@@ -45,6 +45,8 @@ def chat_json(messages, max_tokens=900):
             reply = _client().chat.completions.create(
                 model=settings.AI_API_MODEL, messages=messages, max_tokens=max_tokens, temperature=0.3,
             )
+            if getattr(reply, "usage", None):
+                usage.add(reply.usage.prompt_tokens, reply.usage.completion_tokens)
             data = guardrails.extract_json(reply.choices[0].message.content or "")
         except Exception as exc:  # network error, bad key, rate limit at the provider...
             last_error = exc

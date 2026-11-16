@@ -3,7 +3,7 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from . import accounts, budget, charts, exports, reports, views
+from . import accounts, budget, charts, dashboard, exports, reports, views
 from .ai import views as ai_views
 
 app_name = "trips"
@@ -22,12 +22,16 @@ urlpatterns = [
     path("trips/generic/", views.TripListView.as_view(), name="trip-list-generic"),
     path("trips/<int:pk>/", views.TripDetailView.as_view(), name="trip-detail"),
     path("trips/<int:pk>/budget/", budget.trip_budget_page, name="trip-budget"),
+    path("profile/", views.my_profile, name="my-profile"),
+    path("trips/<int:pk>/requests/<int:request_id>/decide/", views.decide_join_request, name="decide-join-request"),
 
     # Search and plan-a-trip form
     path("trips/search/", views.TripSearchView.as_view(), name="trip-search"),
     path("trips/<int:pk>/days/", ai_views.day_plan, name="day-plan"),
     path("trips/<int:pk>/places/", ai_views.place_suggestions, name="place-suggestions"),
     path("trips/<int:pk>/packing/", ai_views.packing_list, name="packing-list"),
+    path("trips/<int:pk>/packing/tick/", ai_views.packing_tick, name="packing-tick"),
+    path("trips/<int:pk>/ask/", ai_views.ask_trip, name="ask-trip"),
     path("trips/new/", views.TripCreateView.as_view(), name="trip-create"),
 
     # Insights: charts, their definitions and the chart image
@@ -35,6 +39,11 @@ urlpatterns = [
     path("insights/specs/destinations.json", charts.destination_chart_json, name="chart-spec-destinations"),
     path("insights/specs/departures.json", charts.departure_chart_json, name="chart-spec-departures"),
     path("charts/trips-by-destination.png", views.trips_by_destination_chart, name="chart-trips-by-destination"),
+
+    # AI usage dashboard
+    path("dashboard/", dashboard.dashboard_page, name="dashboard"),
+    path("dashboard/charts.json", dashboard.dashboard_charts_json, name="dashboard-charts"),
+    path("api/dashboard/summary/", dashboard.api_dashboard_summary, name="api-dashboard-summary"),
 
     # Reports and downloads
     path("reports/", reports.ReportsView.as_view(), name="reports"),

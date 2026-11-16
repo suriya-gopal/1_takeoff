@@ -23,7 +23,8 @@ from .views import destination_popularity
 VEGA_LITE_SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json"
 
 # Navy, sky and sun come from the TakeOff logo; the rest keep neighbouring bars distinguishable.
-CHART_COLORS = ["#0b2f6b", "#18a0f0", "#ffb62d", "#2f8f6b", "#8a5cf5", "#e4572e", "#5b6b85"]
+# Muted, professional palette built around the site's navy (one colour per country).
+CHART_COLORS = ["#1f3a68", "#4a78a8", "#3f8f87", "#b8975a", "#6b7a90", "#7d6b91", "#a3684f"]
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +195,7 @@ def insights_page(request):
         {"label": "Departures per month", "url": reverse("trips:api-insights-departures")},
     ]
     return render(request, "trips/insights.html", {
-        "rows": destination_popularity(),
+        "rows": destination_popularity(request.user),
         "feeds": feeds,
         "destinations_spec_url": reverse("trips:chart-spec-destinations"),
         "departures_spec_url": reverse("trips:chart-spec-departures"),

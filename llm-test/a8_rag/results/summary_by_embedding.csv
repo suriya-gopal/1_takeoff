@@ -1,0 +1,4 @@
+embedding,gold_hit_rate,mean_gold_rank,recall,context_quality,answer_quality,retrieval_ms,generation_s,prompt_tokens
+small,1.0,1.04,1.0,10.0,6.06,9.59,3.14,609.0
+medium,1.0,1.04,1.0,10.0,7.19,15.49,3.15,600.04
+large,1.0,1.0,1.0,10.0,7.38,31.18,2.96,600.0

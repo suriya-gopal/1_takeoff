@@ -11,7 +11,7 @@
       {% csrf_token %}
       <input type="hidden" name="action" value="draft">
       <div>{{ form.interests.label_tag }} {{ form.interests }} {{ form.interests.errors }}</div>
-      <div>{{ form.with_kids }} {{ form.with_kids.label_tag }}</div>
+      <div class="checkbox-row"><label for="{{ form.with_kids.id_for_label }}">{{ form.with_kids }} {{ form.with_kids.label }}</label></div>
       <p><button type="submit">{% if plan %}Draft again{% else %}Draft my days{% endif %}</button>
          <span class="meta">Drafting can take up to a minute.</span></p>
     </form>

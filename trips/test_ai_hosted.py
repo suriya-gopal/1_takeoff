@@ -14,6 +14,7 @@ from .models import ItineraryItem
 
 CHAT = "trips.ai.remote.chat_json"
 ON = override_settings(AI_API_KEY="test-key", AI_API_MODEL="test-model")
+OFF = override_settings(AI_API_KEY="", AI_API_MODEL="")   # independent of the developer's own .env
 
 PLACES = {"places": [
     {"name": "Art Institute", "why": "Famous collection.", "cost_usd": 32, "hidden_gem": False, "tags": ["museum"]},
@@ -93,6 +94,7 @@ class HostedPageTests(TestCase):
         return self.client.post(self.places_url, {"stop": self.stop.pk, "category": "activity", "interests": "art", **extra})
 
     # --- place suggestions
+    @OFF
     def test_off_without_a_key(self):
         self.assertContains(self.client.get(self.places_url), "not set up", status_code=503)
         self.assertContains(self.client.get(self.packing_url), "not set up", status_code=503)
@@ -228,6 +230,7 @@ class PlaceCheckTests(TestCase):
         self.assertContains(page, "Invented Museum")
         self.assertContains(page, "could not run")
 
+    @OFF
     def test_no_check_without_a_key(self):
         page = self.run_draft({"return_value": {}})
         self.assertContains(page, "Invented Museum")
